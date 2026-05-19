@@ -1,221 +1,251 @@
-// src/pages/SoilReportPage.tsx (Corrected)
+// src/pages/SoilReportPage.tsx - SIMPLIFIED VERSION
 
-import React, { useState } from 'react';
-import { Beaker, Upload, FileText, TrendingUp, Lightbulb, Loader2 } from 'lucide-react';
-import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from 'recharts';
-import { db, auth } from "../services/firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { useState } from 'react';
+import { Beaker, Loader, CheckCircle, AlertCircle, FileText } from 'lucide-react';
+import { db, auth } from '../services/firebase';
+import { collection, addDoc } from 'firebase/firestore';
+import { analyzeSoilReport } from '../services/aiService';
 
-interface SoilNutrient {
-  nutrient: string;
-  value: number;
-  ideal: number;
-  status: string;
-}
+const SoilReportPage = () => {
+  const [analyzing, setAnalyzing] = useState(false);
+  const [soilData, setSoilData] = useState({
+    nitrogen: '',
+    phosphorus: '',
+    potassium: '',
+    pH: undefined as number | undefined,
+    organicMatter: undefined as number | undefined
+  });
+  const [fieldName, setFieldName] = useState('');
+  const [currentAnalysis, setCurrentAnalysis] = useState<{
+    analysis: string;
+    recommendations: string[];
+  } | null>(null);
 
-interface Recommendation {
-  type: string;
-  title: string;
-  description: string;
-  priority: 'high' | 'medium' | 'low';
-}
-
-const SoilReportPage: React.FC = () => {
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [soilData, setSoilData] = useState<SoilNutrient[]>([]);
-  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setUploadedFile(file);
-      setSoilData([]);
-      setRecommendations([]);
-      setError(null);
-    }
-  };
-
-  const handleAnalyzeReport = async () => {
-    if (!uploadedFile) {
-      setError('Please upload a file first.');
+  const handleAnalyze = async () => {
+    if (!soilData.nitrogen || !soilData.phosphorus || !soilData.potassium) {
+      alert('Please fill in at least N, P, K values');
       return;
     }
 
-    setLoading(true);
-    setError(null);
-
-    const formData = new FormData();
-    formData.append('soilReport', uploadedFile);
-
+    setAnalyzing(true);
     try {
-      const res = await fetch('http://localhost:5174/api/analyze-soil-report', {
-        method: 'POST',
-        body: formData,
+      // Call AI service
+      const result = await analyzeSoilReport(soilData);
+      setCurrentAnalysis(result);
+
+      // Save to Firebase
+      const user = auth.currentUser;
+      if (user) {
+        await addDoc(collection(db, 'soilReports'), {
+          uid: user.uid,
+          soilData,
+          aiAnalysis: result.analysis,
+          aiRecommendations: result.recommendations,
+          field: fieldName || 'Unnamed Field',
+          createdAt: new Date()
+        });
+      }
+
+      // Reset form
+      setSoilData({
+        nitrogen: '',
+        phosphorus: '',
+        potassium: '',
+        pH: undefined,
+        organicMatter: undefined
       });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || `Server responded with status: ${res.status}`);
-      }
-
-      const parsedResponse = await res.json();
-
-      if (parsedResponse.soilData && parsedResponse.recommendations) {
-        setSoilData(parsedResponse.soilData);
-        setRecommendations(parsedResponse.recommendations);
-
-        const user = auth.currentUser;
-        if (user) {
-          await addDoc(collection(db, "soilReports"), {
-            uid: user.uid,
-            fileName: uploadedFile?.name,
-            soilData: parsedResponse.soilData,
-            recommendations: parsedResponse.recommendations,
-            createdAt: serverTimestamp(),
-          });
-        }
-      } else {
-        throw new Error("Invalid data structure received from the server.");
-      }
-    } catch (err: any) {
-      setError(`Failed to analyze report: ${err.message}`);
-      console.error(err);
+      setFieldName('');
+    } catch (error) {
+      console.error('Analysis error:', error);
+      alert('Failed to analyze soil. Please try again.');
     } finally {
-      setLoading(false);
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20';
-      case 'medium': return 'border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20';
-      case 'low': return 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20';
-      default: return 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50';
-    }
-  };
-
-  const getPriorityTextColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'text-red-800 dark:text-red-300';
-      case 'medium': return 'text-yellow-800 dark:text-yellow-300';
-      case 'low': return 'text-green-800 dark:text-green-300';
-      default: return 'text-gray-800 dark:text-gray-200';
+      setAnalyzing(false);
     }
   };
 
   return (
-    <div className="space-y-6 pb-20 lg:pb-6">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-8 flex items-center gap-3">
-          <Beaker className="w-8 h-8 text-green-600" />
-          Soil & Fertilizer Hub
-        </h1>
+    <div className="space-y-6 pb-8">
+      {/* Header */}
+      <div className="card p-6">
+        <div className="flex items-center gap-3 mb-2">
+          <Beaker className="w-8 h-8 text-indigo-600" />
+          <h1 className="section-title mb-0">AI Soil Analysis</h1>
+        </div>
+        <p className="text-gray-600 dark:text-gray-400">
+          Get AI-powered soil analysis and fertilizer recommendations
+        </p>
+      </div>
 
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900/50 rounded-xl p-6 mb-8 border border-blue-100 dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
-            <Upload className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-            Upload Soil Report
-          </h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div>
-              <div className="border-2 border-dashed border-blue-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-blue-400 dark:hover:border-blue-500 transition-colors">
-                <input type="file" accept="image/*,.pdf" onChange={handleFileUpload} className="hidden" id="soil-upload" />
-                <label htmlFor="soil-upload" className="cursor-pointer">
-                  <Upload className="w-12 h-12 text-blue-400 dark:text-blue-500 mx-auto mb-3" />
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Click to upload or drag and drop</p>
-                  <p className="text-xs text-gray-500">PNG, JPG, PDF up to 10MB</p>
-                </label>
-              </div>
+      {/* Input Section */}
+      <div className="card p-6">
+        <h2 className="font-bold text-xl text-gray-900 dark:text-gray-100 mb-4">
+          Enter Soil Test Results
+        </h2>
 
-              {uploadedFile && (
-                <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/50 border border-green-200 dark:border-green-800 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-green-600 dark:text-green-400" />
-                    <span className="text-sm text-green-800 dark:text-green-300 font-medium">{uploadedFile.name}</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-4">
-              <h3 className="font-semibold text-gray-800 dark:text-gray-200">What we analyze:</h3>
-              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                <li className="flex items-center gap-2"><div className="w-2 h-2 bg-blue-400 rounded-full"></div>Nitrogen, Phosphorus, Potassium</li>
-                <li className="flex items-center gap-2"><div className="w-2 h-2 bg-blue-400 rounded-full"></div>Soil pH and organic carbon</li>
-                <li className="flex items-center gap-2"><div className="w-2 h-2 bg-blue-400 rounded-full"></div>Micronutrients and soil texture</li>
-                <li className="flex items-center gap-2"><div className="w-2 h-2 bg-blue-400 rounded-full"></div>Customized fertilizer advice</li>
-              </ul>
-
-              <button onClick={handleAnalyzeReport} disabled={!uploadedFile || loading}
-                className={`w-full text-white py-3 rounded-lg transition-colors font-medium flex items-center justify-center gap-2 ${uploadedFile && !loading ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed'}`}>
-                {loading && <Loader2 className="w-5 h-5 animate-spin" />}
-                {loading ? 'Analyzing...' : 'Analyze Report'}
-              </button>
-            </div>
+        <div className="grid md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="label">Field Name (Optional)</label>
+            <input
+              type="text"
+              value={fieldName}
+              onChange={(e) => setFieldName(e.target.value)}
+              placeholder="e.g., North Field"
+              className="input"
+            />
           </div>
         </div>
 
-        {error && (<div className="bg-red-100 dark:bg-red-900/50 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg mb-6 text-sm">{error}</div>)}
+        <div className="grid md:grid-cols-3 gap-4 mb-4">
+          <div>
+            <label className="label">Nitrogen (N) *</label>
+            <select
+              value={soilData.nitrogen}
+              onChange={(e) => setSoilData({ ...soilData, nitrogen: e.target.value })}
+              className="input"
+            >
+              <option value="">Select level</option>
+              <option value="Low">Low</option>
+              <option value="Medium">Medium</option>
+              <option value="High">High</option>
+            </select>
+          </div>
 
-        {!loading && soilData.length > 0 && (
-          <>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2"><TrendingUp className="w-6 h-6 text-green-600" />Soil Nutrient Analysis</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {soilData.map((item, index) => (
-                    <div key={index} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 text-center border border-gray-200 dark:border-gray-700">
-                      <div className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-1">{item.value}</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">{item.nutrient}</div>
-                      <div className={`text-xs px-2 py-1 rounded-full mx-auto w-fit ${item.status === 'High' ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' :
-                          item.status === 'Medium' ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300' :
-                            'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300'
-                        }`}>{item.status}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Nutrient Profile</h3>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RadarChart data={soilData}>
-                      <PolarGrid stroke="rgba(128, 128, 128, 0.2)" />
-                      <PolarAngleAxis dataKey="nutrient" tick={{ fontSize: 12, fill: 'rgb(107 114 128)' }} />
-                      <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fontSize: 10, fill: 'rgb(107 114 128)' }} />
-                      <Radar name="Current" dataKey="value" stroke="#059669" fill="#059669" fillOpacity={0.4} strokeWidth={2} />
-                      <Radar name="Ideal" dataKey="ideal" stroke="#0ea5e9" fill="#0ea5e9" fillOpacity={0.2} strokeWidth={2} strokeDasharray="5 5" />
-                    </RadarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
+          <div>
+            <label className="label">Phosphorus (P) *</label>
+            <select
+              value={soilData.phosphorus}
+              onChange={(e) => setSoilData({ ...soilData, phosphorus: e.target.value })}
+              className="input"
+            >
+              <option value="">Select level</option>
+              <option value="Low">Low</option>
+              <option value="Medium">Medium</option>
+              <option value="High">High</option>
+            </select>
+          </div>
 
-            <div>
-              <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2"><Lightbulb className="w-6 h-6 text-yellow-500" />Expert Recommendations</h2>
-              <div className="space-y-4">
-                {recommendations.map((rec, index) => (
-                  <div key={index} className={`border rounded-xl p-4 ${getPriorityColor(rec.priority)}`}>
-                    <div className="flex items-start gap-4">
-                      <div className="flex-1">
-                        <h3 className={`font-semibold text-lg mb-1 ${getPriorityTextColor(rec.priority)}`}>{rec.title}</h3>
-                        <p className="text-sm text-gray-700 dark:text-gray-300">{rec.description}</p>
-                        <div className="mt-3">
-                          <span className={`text-xs px-3 py-1 rounded-full font-medium ${rec.priority === 'high' ? 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300' :
-                              rec.priority === 'medium' ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300' :
-                                'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300'
-                            }`}>{rec.priority.charAt(0).toUpperCase() + rec.priority.slice(1)} Priority</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+          <div>
+            <label className="label">Potassium (K) *</label>
+            <select
+              value={soilData.potassium}
+              onChange={(e) => setSoilData({ ...soilData, potassium: e.target.value })}
+              className="input"
+            >
+              <option value="">Select level</option>
+              <option value="Low">Low</option>
+              <option value="Medium">Medium</option>
+              <option value="High">High</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="label">pH Level (Optional)</label>
+            <input
+              type="number"
+              step="0.1"
+              value={soilData.pH || ''}
+              onChange={(e) => setSoilData({ ...soilData, pH: parseFloat(e.target.value) || undefined })}
+              placeholder="e.g., 6.5"
+              className="input"
+            />
+          </div>
+
+          <div>
+            <label className="label">Organic Matter % (Optional)</label>
+            <input
+              type="number"
+              step="0.1"
+              value={soilData.organicMatter || ''}
+              onChange={(e) => setSoilData({ ...soilData, organicMatter: parseFloat(e.target.value) || undefined })}
+              placeholder="e.g., 2.5"
+              className="input"
+            />
+          </div>
+        </div>
+
+        <button
+          onClick={handleAnalyze}
+          disabled={analyzing || !soilData.nitrogen || !soilData.phosphorus || !soilData.potassium}
+          className="btn-primary w-full"
+        >
+          {analyzing ? (
+            <>
+              <Loader className="w-5 h-5 mr-2 inline animate-spin" />
+              Analyzing with AI...
+            </>
+          ) : (
+            <>
+              <Beaker className="w-5 h-5 mr-2 inline" />
+              Analyze Soil with AI
+            </>
+          )}
+        </button>
+
+        <div className="alert-info mt-4">
+          <AlertCircle className="w-5 h-5" />
+          <div>
+            <p className="font-bold">Free Soil Testing</p>
+            <p className="text-sm">
+              Get your soil tested for free at your nearest Krishi Vigyan Kendra (KVK)
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Current Analysis */}
+      {currentAnalysis && (
+        <div className="card p-6 border-2 border-indigo-600">
+          <h2 className="font-bold text-xl text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+            <CheckCircle className="w-6 h-6 text-green-600" />
+            AI Analysis Complete
+          </h2>
+
+          <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-4 mb-4">
+            <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 mb-2">
+              Soil Health Assessment
+            </h3>
+            <p className="text-gray-700 dark:text-gray-300">
+              {currentAnalysis.analysis}
+            </p>
+          </div>
+
+          <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 mb-3">
+            AI Recommendations
+          </h3>
+          <div className="space-y-3">
+            {currentAnalysis.recommendations.map((rec, i) => (
+              <div
+                key={i}
+                className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl"
+              >
+                <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">
+                  {i + 1}
+                </div>
+                <p className="text-gray-700 dark:text-gray-300 flex-1">
+                  {rec}
+                </p>
               </div>
-            </div>
-          </>
-        )}
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Info Card */}
+      <div className="card p-6">
+        <h2 className="font-bold text-xl text-gray-900 dark:text-gray-100 mb-4">
+          About Soil Analysis
+        </h2>
+        <div className="space-y-3 text-gray-700 dark:text-gray-300">
+          <p>
+            <FileText className="w-5 h-5 inline mr-2 text-indigo-600" />
+            Our AI analyzes your soil test results and provides personalized fertilizer recommendations.
+          </p>
+          <p>
+            Enter your N-P-K values and optional pH and organic matter levels to get started.
+          </p>
+        </div>
       </div>
     </div>
   );

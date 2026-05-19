@@ -1,59 +1,215 @@
 // src/pages/InsurancePage.tsx
 
 import React, { useState } from 'react';
-import { Shield, Upload, FileText, PieChart as PieChartIcon } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { Shield, Check, AlertCircle, FileText, Calendar, IndianRupee } from 'lucide-react';
 
 const InsurancePage: React.FC = () => {
-    const [selectedCrop, setSelectedCrop] = useState('');
-    const [selectedDistrict, setSelectedDistrict] = useState('');
-    const [eligibleSchemes, setEligibleSchemes] = useState<string[]>([]);
-    const [selectedScheme, setSelectedScheme] = useState('');
-    const [sumInsured, setSumInsured] = useState<number>(0);
-    const [season, setSeason] = useState<'kharif' | 'rabi' | 'commercial'>('kharif');
-    const [calculatedPremium, setCalculatedPremium] = useState<number | null>(null);
-    const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+    const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
 
-    const insuranceSchemes = [
-        { scheme: 'PMFBY', fullName: 'Pradhan Mantri Fasal Bima Yojana', coverage: '₹50,000/acre', premiumRate: 0.02, subsidyRate: { kharif: 0.75, rabi: 0.7, commercial: 0.5 }, features: ['Weather-based coverage', 'Quick claim settlement', 'Subsidized premium'], eligibility: 'All farmers (landowner/tenant)', crops: 'Wheat, Rice, Cotton, Maize, Sugarcane', claimProcess: '72 hours notification, Survey within 48 hours', applyUrl: 'https://pmfby.gov.in/' },
-        { scheme: 'State Crop Insurance', fullName: 'State Government Crop Insurance', coverage: '₹30,000/acre', premiumRate: 0.015, subsidyRate: { kharif: 0.7, rabi: 0.65, commercial: 0 }, features: ['Local crop focus', 'Fast processing', 'Regional expertise'], eligibility: 'Farmers in notified areas', crops: 'Wheat, Rice, Cotton', claimProcess: 'Village-level assessment', applyUrl: 'https://www.maharashtra.gov.in/' },
-        { scheme: 'Private AgriCare', fullName: 'Private Agricultural Insurance', coverage: '₹75,000/acre', premiumRate: 0.03, subsidyRate: { kharif: 0, rabi: 0, commercial: 0 }, features: ['Comprehensive coverage', '24/7 support', 'Additional benefits'], eligibility: 'All categories of farmers', crops: 'All crops including exotic varieties', claimProcess: 'Digital claim processing', applyUrl: 'https://www.icicilombard.com/rural-insurance/crop-insurance' }
+    const plans = [
+        {
+            id: 'basic',
+            name: 'Basic Coverage',
+            price: 2500,
+            coverage: '₹50,000',
+            features: [
+                'Natural calamities',
+                'Pest damage',
+                'Disease coverage',
+                'Basic claim support'
+            ],
+            popular: false
+        },
+        {
+            id: 'standard',
+            name: 'Standard Coverage',
+            price: 5000,
+            coverage: '₹1,00,000',
+            features: [
+                'All Basic features',
+                'Fire damage',
+                'Theft protection',
+                'Priority claim support',
+                'Expert consultation'
+            ],
+            popular: true
+        },
+        {
+            id: 'premium',
+            name: 'Premium Coverage',
+            price: 8500,
+            coverage: '₹2,00,000',
+            features: [
+                'All Standard features',
+                'Revenue loss protection',
+                'Equipment insurance',
+                '24/7 claim support',
+                'Free farm inspection'
+            ],
+            popular: false
+        }
     ];
-    const coverageData = [ { name: 'PMFBY', value: 55, color: '#059669' }, { name: 'State Insurance', value: 25, color: '#0ea5e9' }, { name: 'Private AgriCare', value: 20, color: '#f59e0b' } ];
 
-    const checkEligibility = () => {
-        if (!selectedCrop || !selectedDistrict) { alert('Please select crop and district'); return; }
-        const eligible = insuranceSchemes.filter(scheme => scheme.crops.toLowerCase().includes(selectedCrop.toLowerCase())).map(scheme => scheme.scheme);
-        setEligibleSchemes(eligible);
-    };
+    const claims = [
+        { id: 1, date: '15 Dec 2025', type: 'Pest Damage', status: 'Approved', amount: '₹12,000' },
+        { id: 2, date: '03 Nov 2025', type: 'Flood', status: 'Processing', amount: '₹25,000' }
+    ];
 
     return (
-        <div className="space-y-6 pb-20 lg:pb-6">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-green-100 dark:border-gray-700 p-6">
-                <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-6 flex items-center gap-3"><Shield className="w-8 h-8 text-green-600" />Crop Insurance Advisory</h1>
+        <div className="space-y-6 pb-8">
+            {/* Header */}
+            <div className="card p-6">
+                <div className="flex items-center gap-3 mb-2">
+                    <Shield className="w-8 h-8 text-purple-600" />
+                    <h1 className="section-title mb-0">Crop Insurance</h1>
+                </div>
+                <p className="text-gray-600 dark:text-gray-400">
+                    Protect your crops from unexpected losses
+                </p>
+            </div>
 
-                <div className="space-y-6 mb-8">
-                    {insuranceSchemes.map((scheme, index) => (
-                        <div key={index} className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-700/50 dark:to-gray-800/50 rounded-xl p-6 border border-green-100 dark:border-gray-700">
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                <div>
-                                    <div className="mb-4"><h3 className="font-bold text-lg text-gray-800 dark:text-gray-200">{scheme.scheme}</h3><p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{scheme.fullName}</p></div>
-                                    <div className="space-y-3 mb-4"><div className="flex justify-between"><span className="text-sm text-gray-600 dark:text-gray-400">Coverage:</span><span className="font-semibold text-green-600 dark:text-green-400">{scheme.coverage}</span></div><div className="flex justify-between"><span className="text-sm text-gray-600 dark:text-gray-400">Premium:</span><span className="font-semibold text-gray-800 dark:text-gray-200">{(scheme.premiumRate * 100).toFixed(2)}%</span></div></div>
+            {/* Current Coverage */}
+            <div className="card p-6 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border-purple-200 dark:border-purple-800">
+                <div className="flex items-start justify-between mb-4">
+                    <div>
+                        <div className="text-sm font-medium text-purple-700 dark:text-purple-400 mb-1">
+                            Active Plan
+                        </div>
+                        <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                            Standard Coverage
+                        </div>
+                    </div>
+                    <div className="badge-success">Active</div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Coverage Amount</div>
+                        <div className="text-xl font-bold text-gray-900 dark:text-gray-100">₹1,00,000</div>
+                    </div>
+                    <div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Valid Until</div>
+                        <div className="text-xl font-bold text-gray-900 dark:text-gray-100">31 Dec 2026</div>
+                    </div>
+                </div>
+                <button className="btn-secondary w-full">
+                    <FileText className="w-4 h-4 mr-2 inline" />
+                    View Policy Details
+                </button>
+            </div>
+
+            {/* Available Plans */}
+            <div>
+                <h2 className="font-bold text-xl text-gray-900 dark:text-gray-100 mb-4">
+                    Available Plans
+                </h2>
+                <div className="grid md:grid-cols-3 gap-4">
+                    {plans.map((plan) => (
+                        <div
+                            key={plan.id}
+                            className={`card p-6 relative ${plan.popular ? 'border-2 border-purple-600' : ''
+                                }`}
+                        >
+                            {plan.popular && (
+                                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                                    <span className="badge-success px-4">Most Popular</span>
+                                </div>
+                            )}
+
+                            <div className="text-center mb-6">
+                                <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 mb-2">
+                                    {plan.name}
+                                </h3>
+                                <div className="flex items-baseline justify-center gap-1 mb-1">
+                                    <IndianRupee className="w-5 h-5 text-gray-600" />
+                                    <span className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                                        {plan.price.toLocaleString()}
+                                    </span>
+                                    <span className="text-gray-600 dark:text-gray-400">/year</span>
+                                </div>
+                                <div className="text-sm text-gray-600 dark:text-gray-400">
+                                    Coverage up to {plan.coverage}
+                                </div>
+                            </div>
+
+                            <ul className="space-y-3 mb-6">
+                                {plan.features.map((feature, i) => (
+                                    <li key={i} className="flex items-start gap-2 text-sm">
+                                        <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                                        <span className="text-gray-700 dark:text-gray-300">{feature}</span>
+                                    </li>
+                                ))}
+                            </ul>
+
+                            <button
+                                onClick={() => setSelectedPlan(plan.id)}
+                                className={`w-full ${plan.popular ? 'btn-primary' : 'btn-secondary'
+                                    }`}
+                            >
+                                {selectedPlan === plan.id ? 'Selected' : 'Choose Plan'}
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Recent Claims */}
+            <div className="card p-6">
+                <h2 className="font-bold text-xl text-gray-900 dark:text-gray-100 mb-4">
+                    Recent Claims
+                </h2>
+                <div className="space-y-3">
+                    {claims.map((claim) => (
+                        <div
+                            key={claim.id}
+                            className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl"
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
+                                    <FileText className="w-6 h-6 text-purple-600" />
                                 </div>
                                 <div>
-                                    <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-3">Scheme Details</h4>
-                                    <div className="space-y-2 text-sm"><div className="text-gray-600 dark:text-gray-400">Eligibility: <span className="text-gray-800 dark:text-gray-300">{scheme.eligibility}</span></div><div className="text-gray-600 dark:text-gray-400">Crops: <span className="text-gray-800 dark:text-gray-300">{scheme.crops}</span></div><div className="text-gray-600 dark:text-gray-400">Claim: <span className="text-gray-800 dark:text-gray-300">{scheme.claimProcess}</span></div></div>
+                                    <div className="font-bold text-gray-900 dark:text-gray-100">
+                                        {claim.type}
+                                    </div>
+                                    <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                                        <Calendar className="w-4 h-4" />
+                                        {claim.date}
+                                    </div>
                                 </div>
-                                <div>
-                                    <ul className="space-y-1 mb-4">{scheme.features.map((feature, idx) => (<li key={idx} className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-2"><div className="w-1 h-1 bg-green-400 rounded-full"></div>{feature}</li>))}</ul>
-                                    <a href={scheme.applyUrl} target="_blank" rel="noopener noreferrer" className="w-full block text-center bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors font-medium">Apply Now</a>
+                            </div>
+                            <div className="text-right">
+                                <div className="font-bold text-gray-900 dark:text-gray-100 mb-1">
+                                    {claim.amount}
                                 </div>
+                                <span
+                                    className={`text-xs px-2 py-1 rounded-full ${claim.status === 'Approved'
+                                            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                                            : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                                        }`}
+                                >
+                                    {claim.status}
+                                </span>
                             </div>
                         </div>
                     ))}
+                </div>
+                <button className="btn-secondary w-full mt-4">
+                    File New Claim
+                </button>
+            </div>
+
+            {/* Info Alert */}
+            <div className="alert-info">
+                <AlertCircle className="w-5 h-5" />
+                <div>
+                    <p className="font-bold">Premium Kisan Bima Yojana (PMFBY)</p>
+                    <p className="text-sm">
+                        Government subsidy available. You may be eligible for up to 50% premium discount.
+                    </p>
                 </div>
             </div>
         </div>
     );
 };
+
 export default InsurancePage;

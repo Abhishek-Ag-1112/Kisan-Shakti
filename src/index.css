@@ -1,54 +1,302 @@
-/* src/index.css */
+/* src/index.css - Minimalist Farmer-Friendly Design System */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+
+  /* Optimized for readability */
+  body {
+    @apply text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-950;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* ============ GLOBAL ULTRA-THIN GREEN SCROLLBAR ============ */
+  /* Remove arrow buttons completely - Maximum specificity */
+  *::-webkit-scrollbar-button,
+  *::-webkit-scrollbar-button:single-button,
+  *::-webkit-scrollbar-button:double-button,
+  *::-webkit-scrollbar-button:vertical:decrement,
+  *::-webkit-scrollbar-button:vertical:increment,
+  *::-webkit-scrollbar-button:horizontal:decrement,
+  *::-webkit-scrollbar-button:horizontal:increment {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+  }
+
+  /* Ultra-thin scrollbar */
+  *::-webkit-scrollbar {
+    width: 3px !important;
+    height: 3px !important;
+  }
+
+  /* Transparent track */
+  *::-webkit-scrollbar-track,
+  *::-webkit-scrollbar-track-piece {
+    background-color: transparent !important;
+  }
+
+  /* Green gradient thumb */
+  *::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #10b981 0%, #059669 50%, #047857 100%) !important;
+    border-radius: 20px !important;
+    opacity: 0.5;
+    transition: all 0.3s ease;
+  }
+
+  /* Hover effect */
+  *::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #059669 0%, #047857 50%, #065f46 100%) !important;
+    opacity: 1 !important;
+  }
+
+  /* Transparent corner */
+  *::-webkit-scrollbar-corner {
+    background-color: transparent !important;
+  }
+
+  /* Firefox scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #10b981 transparent;
+  }
+}
+
 @layer components {
+  /* ============ FORM ELEMENTS ============ */
+
   .input {
-    @apply w-full px-4 py-3 bg-gray-100 dark:bg-gray-700/50 border-2 border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all;
+    @apply w-full px-5 py-4 text-base bg-white dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 placeholder:text-gray-400 dark:placeholder:text-gray-500;
   }
 
   .label {
-    @apply block text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1;
+    @apply block text-base font-semibold text-gray-700 dark:text-gray-300 mb-2;
   }
 
-  .button-primary {
-    @apply w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold py-3 px-4 rounded-lg hover:opacity-90 transition-all duration-300 transform active:scale-95 shadow-md hover:shadow-lg;
+  /* ============ BUTTONS ============ */
+
+  .btn {
+    @apply px-6 py-3.5 font-semibold rounded-xl transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2;
   }
 
-  .button-secondary {
-    @apply w-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-bold py-3 px-4 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-300 transform active:scale-95;
+  .btn-primary {
+    @apply btn bg-green-600 hover:bg-green-700 text-white shadow-sm hover:shadow-md focus:ring-green-500;
   }
-  
+
+  .btn-secondary {
+    @apply btn bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-2 border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 focus:ring-gray-400;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800;
+  }
+
+  .btn-icon {
+    @apply p-3 rounded-xl transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-95 focus:outline-none focus:ring-2 focus:ring-gray-400;
+  }
+
+  /* ============ CARDS ============ */
+
+  .card {
+    @apply bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm transition-all duration-200;
+  }
+
+  .card-hover {
+    @apply card hover:shadow-md hover:border-gray-300 dark:hover:border-gray-700;
+  }
+
+  .card-interactive {
+    @apply card-hover cursor-pointer active:scale-[0.99];
+  }
+
+  /* ============ SECTIONS ============ */
+
+  .section-title {
+    @apply text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2;
+  }
+
+  .section-subtitle {
+    @apply text-base text-gray-600 dark:text-gray-400 mb-6;
+  }
+
+  /* ============ BADGES & TAGS ============ */
+
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+  }
+
+  .badge-success {
+    @apply badge bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400;
+  }
+
+  .badge-warning {
+    @apply badge bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400;
+  }
+
+  .badge-info {
+    @apply badge bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400;
+  }
+
+  /* ============ RADIO & CHECKBOX ============ */
+
   .radio-label {
-      @apply flex items-center justify-center p-3 border-2 border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer transition-all w-full;
+    @apply flex items-center justify-center px-4 py-3.5 border-2 border-gray-300 dark:border-gray-700 rounded-xl cursor-pointer transition-all duration-200 hover:border-green-400 dark:hover:border-green-600;
   }
-  
-  /* Style for checked radio button's label */
-  input[type="radio"]:checked + .radio-label {
-      @apply bg-green-50 dark:bg-green-900/50 border-green-500 text-green-600 dark:text-green-300 font-semibold;
+
+  input[type="radio"]:checked+.radio-label {
+    @apply bg-green-50 dark:bg-green-900/20 border-green-600 text-green-700 dark:text-green-400 font-semibold;
   }
-   /* Hide the actual radio button */
+
   input[type="radio"] {
-      @apply hidden;
+    @apply hidden;
+  }
+
+  input[type="checkbox"] {
+    @apply w-5 h-5 rounded border-2 border-gray-300 dark:border-gray-700 text-green-600 focus:ring-2 focus:ring-green-500 focus:ring-offset-0 transition-all duration-200;
+  }
+
+  /* ============ STAT CARDS ============ */
+
+  .stat-card {
+    @apply card p-5 space-y-2;
+  }
+
+  .stat-label {
+    @apply text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide;
+  }
+
+  .stat-value {
+    @apply text-3xl font-bold text-gray-900 dark:text-gray-100;
+  }
+
+  .stat-change {
+    @apply text-sm font-medium;
+  }
+
+  /* ============ NAVIGATION ============ */
+
+  .nav-link {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-300 font-medium transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-800;
+  }
+
+  .nav-link-active {
+    @apply nav-link bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 font-semibold;
+  }
+
+  /* ============ ALERTS ============ */
+
+  .alert {
+    @apply p-4 rounded-xl border-l-4 flex items-start gap-3;
+  }
+
+  .alert-success {
+    @apply alert bg-green-50 dark:bg-green-900/20 border-green-500 text-green-800 dark:text-green-300;
+  }
+
+  .alert-warning {
+    @apply alert bg-amber-50 dark:bg-amber-900/20 border-amber-500 text-amber-800 dark:text-amber-300;
+  }
+
+  .alert-error {
+    @apply alert bg-red-50 dark:bg-red-900/20 border-red-500 text-red-800 dark:text-red-300;
+  }
+
+  .alert-info {
+    @apply alert bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-800 dark:text-blue-300;
+  }
+
+  /* ============ LOADING STATES ============ */
+
+  .skeleton {
+    @apply animate-pulse bg-gray-200 dark:bg-gray-800 rounded-xl;
+  }
+
+  .spinner {
+    @apply animate-spin rounded-full border-4 border-gray-200 dark:border-gray-800 border-t-green-600;
   }
 }
 
-/* Custom fade-in animation */
+/* ============ ANIMATIONS ============ */
+
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in {
-  animation: fadeIn 0.5s ease-out forwards;
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-/* Custom grid background for landing page */
-.bg-grid-gray-200 {
-    background-image: linear-gradient(to right, #e5e7eb 1px, transparent 1px), linear-gradient(to bottom, #e5e7eb 1px, transparent 1px);
-    background-size: 2rem 2rem;
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
-.dark .bg-grid-gray-700\/40 {
-    background-image: linear-gradient(to right, rgba(55, 65, 81, 0.4) 1px, transparent 1px), linear-gradient(to bottom, rgba(55, 65, 81, 0.4) 1px, transparent 1px);
-    background-size: 3rem 3rem;
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.4s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out forwards;
+}
+
+/* ============ UTILITIES ============ */
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Custom scrollbar for better UX */
+.scrollbar-custom::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.scrollbar-custom::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-gray-900 rounded-full;
+}
+
+.scrollbar-custom::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-700 rounded-full hover:bg-gray-400 dark:hover:bg-gray-600;
 }

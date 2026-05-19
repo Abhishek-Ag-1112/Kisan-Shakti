@@ -1,85 +1,159 @@
-import React, { useState, useEffect } from 'react';
-import { ShoppingCart, CheckCircle, ArrowLeft } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useLanguage } from '../contexts/LanguageContext';
+// src/pages/CartPage.tsx
+
+import React, { useState } from 'react';
+import { ShoppingCart, Trash2, Plus, Minus, ArrowRight } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const CartPage: React.FC = () => {
-  const { translations, language } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
-  const [cartItems, setCartItems] = useState<any[]>([]);
+  const initialItems = location.state?.cartItems || [];
 
-  useEffect(() => {
-    if (location.state?.cartItems) {
-      setCartItems(location.state.cartItems);
-    }
-  }, [location.state]);
+  const [cartItems, setCartItems] = useState(
+    initialItems.map((item: any) => ({ ...item, quantity: 1 }))
+  );
 
-  const getTotalAmount = () => {
-    return cartItems.reduce((sum: number, item: any) => sum + item.price, 0);
+  const updateQuantity = (id: number, delta: number) => {
+    setCartItems(items =>
+      items.map(item =>
+        item.id === id
+          ? { ...item, quantity: Math.max(1, item.quantity + delta) }
+          : item
+      )
+    );
   };
 
-  const handlePlaceOrder = () => {
-    // In a real application, you would send this data to your database
-    // for processing and payment handling.
-    console.log('Placing order with items:', cartItems);
-    alert('Order placed successfully!');
-    setCartItems([]);
-    navigate('/marketplace');
+  const removeItem = (id: number) => {
+    setCartItems(items => items.filter(item => item.id !== id));
   };
 
-  const handleRemoveItem = (indexToRemove: number) => {
-    setCartItems(currentItems => currentItems.filter((_, index) => index !== indexToRemove));
-  };
+  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const shipping = subtotal > 0 ? 100 : 0;
+  const total = subtotal + shipping;
 
   return (
-    <div className="space-y-6 pb-20 lg:pb-6">
-      <div className="bg-white rounded-2xl shadow-sm border border-green-100 p-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+    <div className="space-y-6 pb-8">
+      {/* Header */}
+      <div className="card p-6">
+        <div className="flex items-center gap-3 mb-2">
           <ShoppingCart className="w-8 h-8 text-green-600" />
-          {translations.cart?.[language] || 'Shopping Cart'}
-        </h1>
+          <h1 className="section-title mb-0">Shopping Cart</h1>
+        </div>
+        <p className="text-gray-600 dark:text-gray-400">
+          {cartItems.length} {cartItems.length === 1 ? 'item' : 'items'} in your cart
+        </p>
+      </div>
 
-        <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <ShoppingCart className="w-5 h-5 text-gray-600" />
-            Order Summary
-          </h2>
-          <div className="space-y-3">
-            {cartItems.length > 0 ? (
-              cartItems.map((item: any, index: number) => (
-                <div key={index} className="flex justify-between items-center text-gray-700 bg-white p-3 rounded-lg">
-                  <div>
-                    <p className="font-medium text-gray-800">{item.name}</p>
-                    <p className="text-sm text-gray-600">₹{item.price}</p>
+      {cartItems.length === 0 ? (
+        <div className="card p-12 text-center">
+          <ShoppingCart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+            Your cart is empty
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            Add some products to get started
+          </p>
+          <button onClick={() => navigate('/marketplace')} className="btn-primary">
+            Browse Marketplace
+          </button>
+        </div>
+      ) : (
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Cart Items */}
+          <div className="lg:col-span-2 space-y-4">
+            {cartItems.map((item) => (
+              <div key={item.id} className="card p-6">
+                <div className="flex gap-4">
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="w-24 h-24 object-cover rounded-xl"
+                  />
+                  <div className="flex-1">
+                    <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 mb-1">
+                      {item.name}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                      {item.seller}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => updateQuantity(item.id, -1)}
+                          className="btn-icon w-8 h-8"
+                        >
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <span className="font-bold text-gray-900 dark:text-gray-100 w-8 text-center">
+                          {item.quantity}
+                        </span>
+                        <button
+                          onClick={() => updateQuantity(item.id, 1)}
+                          className="btn-icon w-8 h-8"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xl font-bold text-green-600">
+                          ₹{(item.price * item.quantity).toLocaleString()}
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          ₹{item.price} each
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <button onClick={() => handleRemoveItem(index)} className="text-red-500 hover:text-red-700 transition-colors">
-                    Remove
+                  <button
+                    onClick={() => removeItem(item.id)}
+                    className="btn-icon self-start"
+                  >
+                    <Trash2 className="w-5 h-5 text-red-600" />
                   </button>
                 </div>
-              ))
-            ) : (
-              <p className="text-center text-gray-600 py-4">Your cart is empty</p>
-            )}
-          </div>
-          
-          {cartItems.length > 0 && (
-            <>
-              <div className="border-t pt-4 mt-4 flex justify-between font-bold text-xl">
-                <span>Total:</span>
-                <span className="text-green-600">₹{getTotalAmount()}</span>
               </div>
+            ))}
+          </div>
+
+          {/* Order Summary */}
+          <div className="lg:col-span-1">
+            <div className="card p-6 sticky top-6">
+              <h3 className="font-bold text-xl text-gray-900 dark:text-gray-100 mb-4">
+                Order Summary
+              </h3>
+
+              <div className="space-y-3 mb-6">
+                <div className="flex justify-between text-gray-700 dark:text-gray-300">
+                  <span>Subtotal</span>
+                  <span className="font-bold">₹{subtotal.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-gray-700 dark:text-gray-300">
+                  <span>Shipping</span>
+                  <span className="font-bold">₹{shipping}</span>
+                </div>
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-3 flex justify-between text-lg">
+                  <span className="font-bold text-gray-900 dark:text-gray-100">Total</span>
+                  <span className="font-bold text-green-600">₹{total.toLocaleString()}</span>
+                </div>
+              </div>
+
               <button
-                onClick={handlePlaceOrder}
-                className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold flex items-center justify-center gap-2 mt-4"
+                onClick={() => navigate('/checkout', { state: { cartItems, total } })}
+                className="btn-primary w-full mb-3"
               >
-                <CheckCircle className="w-5 h-5" />
-                Place Order
+                Proceed to Checkout <ArrowRight className="w-5 h-5 ml-2 inline" />
               </button>
-            </>
-          )}
+
+              <button
+                onClick={() => navigate('/marketplace')}
+                className="btn-secondary w-full"
+              >
+                Continue Shopping
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

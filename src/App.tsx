@@ -30,14 +30,16 @@ import CartPage from './pages/CartPage';
 import FarmTrackingPage from './pages/FarmTrackingPage';
 import SellPage from './pages/SellPage';
 import BlogPage from './pages/BlogPage';
+import CropHealthPage from './pages/CropHealthPage'; // <-- 1. ADD THIS IMPORT
 
 // Consumer Pages
 import Dashboard_c from './pages/consumer/Dashboard_c';
 import Products_c from './pages/consumer/Products_c';
 import Blog_c from './pages/consumer/Blog_c';
+import BlogPostPage from './pages/BlogPostPage';
 import Profile_c from './pages/consumer/Profile_c';
 import Sell_c from './pages/consumer/sell_c';
-import Cart_c from './pages/consumer/Cart_c'; // Make sure this import exists
+import Cart_c from './pages/consumer/Cart_c';
 
 
 function App() {
@@ -49,7 +51,6 @@ function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // Corrected collection name from 'farmers' to 'users'
         const userDocRef = doc(db, "users", user.uid);
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists()) {
@@ -58,7 +59,6 @@ function App() {
           localStorage.setItem('farmwise_user', JSON.stringify(fullUserData));
           setIsLoggedIn(true);
         } else {
-          // This case handles if a user is authenticated but their Firestore doc is deleted.
           setIsLoggedIn(false);
           setCurrentUser(null);
           localStorage.removeItem('farmwise_user');
@@ -83,7 +83,6 @@ function App() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      // The onAuthStateChanged listener will automatically handle the redirection.
     } catch (error) {
       console.error("Error signing out: ", error);
     }
@@ -95,58 +94,59 @@ function App() {
 
   const renderRoutes = () => {
     if (!isLoggedIn) {
-        return (
-            <>
-                <Route path="/" element={<LandingPage onGetStarted={() => setShowAuthWindow(true)} />} />
-                <Route path="/blog" element={<BlogPage currentUser={null} />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-            </>
-        )
+      return (
+        <>
+          <Route path="/" element={<LandingPage onGetStarted={() => setShowAuthWindow(true)} />} />
+          <Route path="/blog" element={<BlogPage currentUser={null} />} />
+          <Route path="/blog/:id" element={<BlogPostPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </>
+      )
     }
 
     if (currentUser.role === 'farmer') {
-        return (
-            <Route path="/" element={<Layout onLogout={handleLogout} currentUser={currentUser} />}>
-                <Route index element={<Navigate to="/dashboard" replace />} />
-                <Route path="dashboard" element={<DashboardPage currentUser={currentUser} />} />
-                <Route path="weather" element={<WeatherPage currentUser={currentUser}/>} />
-                <Route path="msp" element={<MSPPage />} />
-                <Route path="insurance" element={<InsurancePage />} />
-                <Route path="schemes" element={<SchemesPage />} />
-                <Route path="referral" element={<ReferralPage />} />
-                <Route path="soil" element={<SoilReportPage />} />
-                <Route path="marketplace" element={<MarketplacePage />} />
-                <Route path="profile" element={<ProfilePage currentUser={currentUser} onLogout={handleLogout} />} />
-                <Route path="checkout" element={<CheckoutPage />} />
-                <Route path="cart" element={<CartPage />} />
-                <Route path="farm-tracking" element={<FarmTrackingPage currentUser={currentUser} />} />
-                <Route path="sell" element={<SellPage />} />
-                <Route path="blog" element={<BlogPage currentUser={currentUser} />} />
-                <Route path="*" element={<Navigate to="/dashboard" replace />} />
-            </Route>
-        )
+      return (
+        <Route path="/" element={<Layout onLogout={handleLogout} currentUser={currentUser} />}>
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="dashboard" element={<DashboardPage currentUser={currentUser} />} />
+          <Route path="weather" element={<WeatherPage currentUser={currentUser} />} />
+          <Route path="msp" element={<MSPPage />} />
+          <Route path="insurance" element={<InsurancePage />} />
+          <Route path="schemes" element={<SchemesPage />} />
+          <Route path="referral" element={<ReferralPage />} />
+          <Route path="soil" element={<SoilReportPage />} />
+          <Route path="crop-health" element={<CropHealthPage />} /> {/* <-- 2. ADD THIS ROUTE */}
+          <Route path="marketplace" element={<MarketplacePage />} />
+          <Route path="profile" element={<ProfilePage currentUser={currentUser} onLogout={handleLogout} />} />
+          <Route path="checkout" element={<CheckoutPage />} />
+          <Route path="cart" element={<CartPage />} />
+          <Route path="farm-tracking" element={<FarmTrackingPage currentUser={currentUser} />} />
+          <Route path="sell" element={<SellPage />} />
+          <Route path="blog" element={<BlogPage currentUser={currentUser} />} />
+          <Route path="blog/:id" element={<BlogPostPage />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Route>
+      )
     }
 
-    if(currentUser.role === 'consumer') {
-        return (
-            <Route path="/" element={<Layout_c onLogout={handleLogout} currentUser={currentUser} />}>
-                <Route index element={<Navigate to="/consumer-dashboard" replace />} />
-                <Route path="consumer-dashboard" element={<Dashboard_c />} />
-                <Route path="products" element={<Products_c />} />
-                <Route path="consumer-blog" element={<Blog_c currentUser={currentUser} />} />
-                <Route path="consumer-profile" element={<Profile_c currentUser={currentUser} onLogout={handleLogout} />} />
-                <Route path="sell" element={<Sell_c />} />
-                {/* This line is updated to pass the currentUser prop */}
-                <Route path="consumer-cart" element={<Cart_c currentUser={currentUser} />} />
-                <Route path="*" element={<Navigate to="/consumer-dashboard" replace />} />
-            </Route>
-        )
+    if (currentUser.role === 'consumer') {
+      return (
+        <Route path="/" element={<Layout_c onLogout={handleLogout} currentUser={currentUser} />}>
+          <Route index element={<Navigate to="/consumer-dashboard" replace />} />
+          <Route path="consumer-dashboard" element={<Dashboard_c />} />
+          <Route path="products" element={<Products_c />} />
+          <Route path="consumer-blog" element={<Blog_c currentUser={currentUser} />} />
+          <Route path="consumer-blog/:id" element={<BlogPostPage />} />
+          <Route path="consumer-profile" element={<Profile_c currentUser={currentUser} onLogout={handleLogout} />} />
+          <Route path="sell" element={<Sell_c />} />
+          <Route path="consumer-cart" element={<Cart_c currentUser={currentUser} />} />
+          <Route path="*" element={<Navigate to="/consumer-dashboard" replace />} />
+        </Route>
+      )
     }
 
-    // Fallback for users with no role
     return <Route path="*" element={<Navigate to="/" replace />} />;
   }
-
 
   return (
     <ThemeProvider>
@@ -156,7 +156,7 @@ function App() {
             {renderRoutes()}
           </Routes>
           {!isLoggedIn && (
-             <AuthWindow
+            <AuthWindow
               isOpen={showAuthWindow}
               onClose={() => setShowAuthWindow(false)}
               onLogin={handleAuthSuccess}

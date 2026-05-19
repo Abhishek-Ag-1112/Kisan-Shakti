@@ -1,61 +1,227 @@
 // src/pages/ReferralPage.tsx
 
 import React, { useState } from 'react';
-import { Users, Gift, Copy } from 'lucide-react';
+import { Gift, Copy, Share2, Users, Award, CheckCircle } from 'lucide-react';
 
 const ReferralPage: React.FC = () => {
-    const [referralCode] = useState('FARM123XYZ');
     const [copied, setCopied] = useState(false);
-    const handleCopyCode = () => { navigator.clipboard.writeText(referralCode); setCopied(true); setTimeout(() => setCopied(false), 2000); };
-    const progress = { completed: 3, target: 5, percentage: (3 / 5) * 100 };
-    const rewards = [ { referrals: 1, reward: '₹100 cash bonus', unlocked: true }, { referrals: 3, reward: 'Free soil testing kit', unlocked: true }, { referrals: 5, reward: '₹500 shopping voucher', unlocked: false }, { referrals: 10, reward: 'Premium subscription (6 months)', unlocked: false } ];
+    const referralCode = 'FARM2026XYZ';
+    const referralLink = `https://kisanshakti.com/join/${referralCode}`;
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(referralLink);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    const stats = [
+        { label: 'Total Referrals', value: '12', icon: Users },
+        { label: 'Active Referrals', value: '8', icon: CheckCircle },
+        { label: 'Rewards Earned', value: '₹2,400', icon: Award },
+        { label: 'Pending Rewards', value: '₹800', icon: Gift }
+    ];
+
+    const rewards = [
+        { referrals: 1, reward: '₹200', status: 'earned' },
+        { referrals: 5, reward: '₹1,000', status: 'earned' },
+        { referrals: 10, reward: '₹2,500', status: 'current' },
+        { referrals: 25, reward: '₹7,500', status: 'locked' },
+        { referrals: 50, reward: '₹20,000', status: 'locked' }
+    ];
+
+    const referralHistory = [
+        { name: 'Ramesh Kumar', date: '20 Jan 2026', status: 'Active', reward: '₹200' },
+        { name: 'Priya Sharma', date: '18 Jan 2026', status: 'Active', reward: '₹200' },
+        { name: 'Amit Patel', date: '15 Jan 2026', status: 'Pending', reward: '₹200' }
+    ];
 
     return (
-        <div className="space-y-6 pb-20 lg:pb-6">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-green-100 dark:border-gray-700 p-6">
-                <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-6 flex items-center gap-3"><Users className="w-8 h-8 text-green-600" />Invite & Earn Program</h1>
-                
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-gray-700 dark:to-gray-800 rounded-xl p-6 mb-8 text-center">
-                    <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Your Referral Code</h2>
-                    <div className="bg-white dark:bg-gray-900/50 rounded-lg border-2 border-green-200 dark:border-gray-600 p-4 mb-4">
-                        <div className="flex items-center justify-center gap-4">
-                            <span className="text-2xl font-bold text-green-600 dark:text-green-400 tracking-wider">{referralCode}</span>
-                            <button onClick={handleCopyCode} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"><Copy className="w-4 h-4" />{copied ? 'Copied!' : 'Copy'}</button>
-                        </div>
-                    </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Share this code with fellow farmers to earn rewards!</p>
+        <div className="space-y-6 pb-8">
+            {/* Header */}
+            <div className="card p-6">
+                <div className="flex items-center gap-3 mb-2">
+                    <Gift className="w-8 h-8 text-purple-600" />
+                    <h1 className="section-title mb-0">Referral Program</h1>
                 </div>
-                
-                <div className="bg-blue-50 dark:bg-gray-700/50 rounded-xl p-6 mb-8 border border-blue-100 dark:border-gray-700">
-                    <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2"><Gift className="w-5 h-5 text-blue-600 dark:text-blue-400" />Referral Progress</h2>
-                    <div className="mb-4">
-                        <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2"><span>Successful Referrals</span><span>{progress.completed} / {progress.target}</span></div>
-                        <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-3"><div className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full" style={{ width: `${progress.percentage}%` }}></div></div>
+                <p className="text-gray-600 dark:text-gray-400">
+                    Invite friends and earn rewards together
+                </p>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {stats.map((stat, i) => (
+                    <div key={i} className="stat-card">
+                        <stat.icon className="w-8 h-8 text-purple-600 mb-3" />
+                        <div className="stat-label">{stat.label}</div>
+                        <div className="stat-value">{stat.value}</div>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">You're {progress.target - progress.completed} referrals away from your next reward!</p>
+                ))}
+            </div>
+
+            {/* Referral Link */}
+            <div className="card p-6">
+                <h2 className="font-bold text-xl text-gray-900 dark:text-gray-100 mb-4">
+                    Your Referral Link
+                </h2>
+
+                <div className="flex gap-3 mb-4">
+                    <input
+                        type="text"
+                        value={referralLink}
+                        readOnly
+                        className="input flex-1"
+                    />
+                    <button onClick={handleCopy} className="btn-primary">
+                        {copied ? (
+                            <>
+                                <CheckCircle className="w-5 h-5 mr-2 inline" />
+                                Copied!
+                            </>
+                        ) : (
+                            <>
+                                <Copy className="w-5 h-5 mr-2 inline" />
+                                Copy
+                            </>
+                        )}
+                    </button>
                 </div>
 
-                <div>
-                    <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Reward Tiers</h2>
-                    <div className="space-y-4">
-                        {rewards.map((reward, index) => (
-                            <div key={index} className={`border rounded-xl p-4 transition-all ${reward.unlocked ? 'bg-green-50 dark:bg-gray-700/50 border-green-200 dark:border-gray-600' : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700'}`}>
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-4">
-                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${reward.unlocked ? 'bg-green-500 text-white' : 'bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300'}`}>{reward.unlocked ? <Gift className="w-6 h-6" /> : <span className="font-bold">{reward.referrals}</span>}</div>
-                                        <div>
-                                            <p className={`font-semibold ${reward.unlocked ? 'text-green-800 dark:text-green-300' : 'text-gray-600 dark:text-gray-300'}`}>{reward.referrals} Referral{reward.referrals > 1 ? 's' : ''}</p>
-                                            <p className={`text-sm ${reward.unlocked ? 'text-green-700 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>{reward.reward}</p>
+                <div className="flex gap-3">
+                    <button className="btn-secondary flex-1">
+                        <Share2 className="w-5 h-5 mr-2 inline" />
+                        Share on WhatsApp
+                    </button>
+                    <button className="btn-secondary flex-1">
+                        <Share2 className="w-5 h-5 mr-2 inline" />
+                        Share on Facebook
+                    </button>
+                </div>
+            </div>
+
+            {/* Rewards Tiers */}
+            <div className="card p-6">
+                <h2 className="font-bold text-xl text-gray-900 dark:text-gray-100 mb-4">
+                    Rewards Tiers
+                </h2>
+
+                <div className="space-y-3">
+                    {rewards.map((tier, i) => (
+                        <div
+                            key={i}
+                            className={`p-4 rounded-xl border-2 ${tier.status === 'earned'
+                                    ? 'bg-green-50 dark:bg-green-900/20 border-green-600'
+                                    : tier.status === 'current'
+                                        ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-600'
+                                        : 'bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-700'
+                                }`}
+                        >
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${tier.status === 'earned'
+                                            ? 'bg-green-600 text-white'
+                                            : tier.status === 'current'
+                                                ? 'bg-purple-600 text-white'
+                                                : 'bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                                        }`}>
+                                        {tier.status === 'earned' ? (
+                                            <CheckCircle className="w-6 h-6" />
+                                        ) : (
+                                            <Gift className="w-6 h-6" />
+                                        )}
+                                    </div>
+                                    <div>
+                                        <div className="font-bold text-gray-900 dark:text-gray-100">
+                                            {tier.referrals} Referrals
+                                        </div>
+                                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                                            {tier.status === 'earned'
+                                                ? 'Completed'
+                                                : tier.status === 'current'
+                                                    ? '2 more to unlock'
+                                                    : `${tier.referrals - 12} more to unlock`}
                                         </div>
                                     </div>
-                                    {reward.unlocked && (<span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-medium">Unlocked</span>)}
+                                </div>
+                                <div className="text-right">
+                                    <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                                        {tier.reward}
+                                    </div>
+                                    <div className="text-xs text-gray-600 dark:text-gray-400">
+                                        Reward
+                                    </div>
                                 </div>
                             </div>
-                        ))}
-                    </div>
+                        </div>
+                    ))}
                 </div>
+            </div>
+
+            {/* Referral History */}
+            <div className="card p-6">
+                <h2 className="font-bold text-xl text-gray-900 dark:text-gray-100 mb-4">
+                    Recent Referrals
+                </h2>
+
+                <div className="space-y-3">
+                    {referralHistory.map((ref, i) => (
+                        <div
+                            key={i}
+                            className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl"
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center text-purple-600 font-bold">
+                                    {ref.name.charAt(0)}
+                                </div>
+                                <div>
+                                    <div className="font-bold text-gray-900 dark:text-gray-100">
+                                        {ref.name}
+                                    </div>
+                                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                                        {ref.date}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="text-right">
+                                <div className="font-bold text-gray-900 dark:text-gray-100">
+                                    {ref.reward}
+                                </div>
+                                <span
+                                    className={`text-xs px-2 py-1 rounded-full ${ref.status === 'Active'
+                                            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                                            : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                                        }`}
+                                >
+                                    {ref.status}
+                                </span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* How it Works */}
+            <div className="card p-6 bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800">
+                <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 mb-3">
+                    How It Works
+                </h3>
+                <ol className="space-y-2 text-gray-700 dark:text-gray-300">
+                    <li className="flex gap-3">
+                        <span className="font-bold text-purple-600">1.</span>
+                        <span>Share your unique referral link with friends and family</span>
+                    </li>
+                    <li className="flex gap-3">
+                        <span className="font-bold text-purple-600">2.</span>
+                        <span>They sign up and complete their profile</span>
+                    </li>
+                    <li className="flex gap-3">
+                        <span className="font-bold text-purple-600">3.</span>
+                        <span>You both earn rewards when they make their first purchase</span>
+                    </li>
+                </ol>
             </div>
         </div>
     );
 };
+
 export default ReferralPage;

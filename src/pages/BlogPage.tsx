@@ -1,180 +1,196 @@
 // src/pages/BlogPage.tsx
 
-import React, { useState, useEffect } from 'react';
-import { db } from '../services/firebase'; // Ensure you have this export in your firebase config
-import { collection, getDocs, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
-import { Heart, MessageSquare, Send, PlusCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import React from 'react';
+import { BookOpen, Calendar, User, ArrowRight, TrendingUp } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-// Assumption: You pass the currently logged-in user to this component
-interface BlogPageProps {
-  currentUser: any;
-}
+const BlogPage: React.FC = () => {
+  const navigate = useNavigate();
 
-// Define a more detailed structure for a blog post
-interface BlogPost {
-  id: string;
-  title: string;
-  author: string;
-  authorId: string;
-  date: any; // Keep as any to handle both Timestamp and string
-  excerpt: string;
-  content: string; // Full content for the blog post
-  likes: string[]; // Array of user UIDs who have liked the post
-}
-
-const BlogPage: React.FC<BlogPageProps> = ({ currentUser }) => {
-  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Check if the current user is an admin/consumer
-  // In a real app, you'd have a 'role' field in the user's Firestore document
-  const isAdmin = currentUser && currentUser.role === 'admin';
-
-  useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const postsCollectionRef = collection(db, 'blogPosts');
-        const querySnapshot = await getDocs(postsCollectionRef);
-        const posts: BlogPost[] = [];
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          posts.push({
-              id: doc.id,
-              ...data,
-              // This is the fix: Convert Firestore Timestamp to a readable date string
-              date: data.date?.toDate().toLocaleDateString()
-          } as BlogPost);
-        });
-        // Sort by date, newest first
-        posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        setBlogPosts(posts);
-      } catch (err) {
-        console.error("Error fetching blog posts: ", err);
-        setError('Failed to load blog posts. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPosts();
-  }, []);
-
-  const handleLike = async (postId: string) => {
-    if (!currentUser) return; // Must be logged in to like
-
-    const postRef = doc(db, 'blogPosts', postId);
-    const post = blogPosts.find(p => p.id === postId);
-
-    if (post) {
-      const alreadyLiked = post.likes.includes(currentUser.uid);
-
-      try {
-        if (alreadyLiked) {
-          // Unlike the post
-          await updateDoc(postRef, {
-            likes: arrayRemove(currentUser.uid)
-          });
-          // Update state locally for immediate feedback
-          setBlogPosts(blogPosts.map(p =>
-            p.id === postId ? { ...p, likes: p.likes.filter(uid => uid !== currentUser.uid) } : p
-          ));
-        } else {
-          // Like the post
-          await updateDoc(postRef, {
-            likes: arrayUnion(currentUser.uid)
-          });
-           // Update state locally
-           setBlogPosts(blogPosts.map(p =>
-            p.id === postId ? { ...p, likes: [...p.likes, currentUser.uid] } : p
-          ));
-        }
-      } catch (error) {
-        console.error("Error updating like: ", error);
-        // Optionally show an error to the user
-      }
-    }
+  const featuredPost = {
+    id: 1,
+    title: 'Top 10 Farming Tips for 2026',
+    excerpt: 'Discover the latest techniques and best practices to maximize your crop yield this season.',
+    author: 'Dr. Ramesh Kumar',
+    date: '20 Jan 2026',
+    readTime: '5 min read',
+    category: 'Tips & Tricks',
+    image: 'https://images.pexels.com/photos/2132171/pexels-photo-2132171.jpeg?auto=compress&cs=tinysrgb&w=600'
   };
 
-  if (loading) {
-    return <div className="text-center py-20">Loading posts...</div>;
-  }
+  const posts = [
+    {
+      id: 2,
+      title: 'Understanding Soil Health',
+      excerpt: 'Learn how to test and improve your soil quality for better harvests.',
+      author: 'Priya Sharma',
+      date: '18 Jan 2026',
+      readTime: '4 min read',
+      category: 'Soil Management',
+      image: 'https://images.pexels.com/photos/1595104/pexels-photo-1595104.jpeg?auto=compress&cs=tinysrgb&w=400'
+    },
+    {
+      id: 3,
+      title: 'Organic Farming Benefits',
+      excerpt: 'Why switching to organic farming can increase your profits.',
+      author: 'Amit Patel',
+      date: '15 Jan 2026',
+      readTime: '6 min read',
+      category: 'Organic',
+      image: 'https://images.pexels.com/photos/4505166/pexels-photo-4505166.jpeg?auto=compress&cs=tinysrgb&w=400'
+    },
+    {
+      id: 4,
+      title: 'Water Conservation Methods',
+      excerpt: 'Effective irrigation techniques to save water and reduce costs.',
+      author: 'Sunita Devi',
+      date: '12 Jan 2026',
+      readTime: '5 min read',
+      category: 'Water Management',
+      image: 'https://images.pexels.com/photos/1595104/pexels-photo-1595104.jpeg?auto=compress&cs=tinysrgb&w=400'
+    },
+    {
+      id: 5,
+      title: 'Pest Control Guide',
+      excerpt: 'Natural and chemical methods to protect your crops from pests.',
+      author: 'Rajesh Singh',
+      date: '10 Jan 2026',
+      readTime: '7 min read',
+      category: 'Crop Protection',
+      image: 'https://images.pexels.com/photos/4207901/pexels-photo-4207901.jpeg?auto=compress&cs=tinysrgb&w=400'
+    },
+    {
+      id: 6,
+      title: 'Market Trends 2026',
+      excerpt: 'What crops are in demand and how to plan your planting.',
+      author: 'Dr. Meena Gupta',
+      date: '08 Jan 2026',
+      readTime: '4 min read',
+      category: 'Market',
+      image: 'https://images.pexels.com/photos/2132171/pexels-photo-2132171.jpeg?auto=compress&cs=tinysrgb&w=400'
+    }
+  ];
 
-  if (error) {
-    return <div className="text-center py-20 text-red-500">{error}</div>;
-  }
+  const categories = [
+    'All Posts',
+    'Tips & Tricks',
+    'Soil Management',
+    'Organic',
+    'Water Management',
+    'Crop Protection',
+    'Market'
+  ];
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
-       <header className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10">
-         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Kisan Shakti Blog
-            </h1>
-            <p className="mt-1 text-lg text-gray-600 dark:text-gray-300">
-              News, insights, and advice for the modern farmer.
+    <div className="space-y-6 pb-8">
+      {/* Header */}
+      <div className="card p-6">
+        <div className="flex items-center gap-3 mb-2">
+          <BookOpen className="w-8 h-8 text-blue-600" />
+          <h1 className="section-title mb-0">Farming Blog</h1>
+        </div>
+        <p className="text-gray-600 dark:text-gray-400">
+          Latest tips, news, and insights for farmers
+        </p>
+      </div>
+
+      {/* Featured Post */}
+      <div
+        onClick={() => navigate(`/blog/${featuredPost.id}`)}
+        className="card-interactive overflow-hidden cursor-pointer"
+      >
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="h-64 md:h-auto">
+            <img
+              src={featuredPost.image}
+              alt={featuredPost.title}
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <div className="p-6 flex flex-col justify-center">
+            <div className="badge-info mb-3 inline-block w-fit">
+              Featured
+            </div>
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-3">
+              {featuredPost.title}
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-4 text-lg">
+              {featuredPost.excerpt}
             </p>
-           </div>
-           {/* Show "Add Post" button only if the user is an admin */}
-           {isAdmin && (
-            <Link
-              to="/blog/new" // We will create this route later
-              className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
-            >
-              <PlusCircle size={20} />
-              Add New Post
-            </Link>
-           )}
-         </div>
-       </header>
-       <main>
-         <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-           <div className="grid gap-12 lg:grid-cols-3">
-             {blogPosts.map((post) => {
-               const isLiked = currentUser && post.likes.includes(currentUser.uid);
-               return (
-                <div key={post.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden flex flex-col">
-                  <div className="p-8 flex-grow">
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
-                      {post.title}
-                    </h2>
-                    <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-4">
-                      <span>By {post.author}</span>
-                      <span className="mx-2">&bull;</span>
-                      <span>{post.date}</span>
-                    </div>
-                    <p className="text-gray-600 dark:text-gray-400 mb-6">
-                      {post.excerpt}
-                    </p>
-                  </div>
-                  <div className="p-6 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                    <div className="flex items-center gap-4">
-                        <button
-                          onClick={() => handleLike(post.id)}
-                          className={`flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-red-500 transition-colors ${isLiked ? 'text-red-500' : ''}`}
-                        >
-                          <Heart size={20} fill={isLiked ? 'currentColor' : 'none'} />
-                          <span className="font-semibold">{post.likes.length}</span>
-                        </button>
-                        {/* Future feature: comments */}
-                        {/* <button className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-blue-500">
-                           <MessageSquare size={20} />
-                           <span className="font-semibold">0</span>
-                        </button> */}
-                    </div>
-                    <a href="#" className="font-semibold text-green-600 dark:text-green-400 hover:underline">
-                      Read More &rarr;
-                    </a>
-                  </div>
+            <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <div className="flex items-center gap-2">
+                <User className="w-4 h-4" />
+                {featuredPost.author}
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                {featuredPost.date}
+              </div>
+              <div>{featuredPost.readTime}</div>
+            </div>
+            <button className="btn-primary w-fit">
+              Read More <ArrowRight className="w-4 h-4 ml-2 inline" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Categories */}
+      <div className="flex flex-wrap gap-2">
+        {categories.map((cat) => (
+          <button
+            key={cat}
+            className="px-4 py-2 rounded-xl font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
+
+      {/* Posts Grid */}
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {posts.map((post) => (
+          <div
+            key={post.id}
+            onClick={() => navigate(`/blog/${post.id}`)}
+            className="card-interactive overflow-hidden cursor-pointer"
+          >
+            <div className="h-48 overflow-hidden">
+              <img
+                src={post.image}
+                alt={post.title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+            </div>
+            <div className="p-6">
+              <div className="text-xs font-bold text-blue-600 dark:text-blue-400 mb-2 uppercase tracking-wide">
+                {post.category}
+              </div>
+              <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 mb-2 line-clamp-2">
+                {post.title}
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
+                {post.excerpt}
+              </p>
+              <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
+                <div className="flex items-center gap-2">
+                  <User className="w-3 h-3" />
+                  {post.author}
                 </div>
-               )
-              })}
-           </div>
-         </div>
-       </main>
-     </div>
+                <div>{post.readTime}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Load More */}
+      <div className="text-center">
+        <button className="btn-secondary">
+          Load More Articles
+        </button>
+      </div>
+    </div>
   );
 };
 

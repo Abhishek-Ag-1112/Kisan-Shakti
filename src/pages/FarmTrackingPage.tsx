@@ -51,7 +51,7 @@ const FarmTrackingPage: React.FC<FarmTrackingPageProps> = ({ currentUser }) => {
   const [currentPlot, setCurrentPlot] = useState<Partial<Plot> | null>(null);
   const [totalLandSize, setTotalLandSize] = useState<number>(0);
   const [history, setHistory] = useState<SoilReportHistory[]>([]);
-  
+
   const [devices, setDevices] = useState<Device[]>([]);
   const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(false);
   const [currentDevice, setCurrentDevice] = useState<Partial<Device> | null>(null);
@@ -102,7 +102,7 @@ const FarmTrackingPage: React.FC<FarmTrackingPageProps> = ({ currentUser }) => {
 
     fetchHistory();
   }, []);
-  
+
   // Load devices from Firestore
   useEffect(() => {
     const fetchDevices = async () => {
@@ -120,16 +120,26 @@ const FarmTrackingPage: React.FC<FarmTrackingPageProps> = ({ currentUser }) => {
   }, [currentUser]);
 
   // ---------------- Helpers ----------------
-  const getAISuggestion = (crop: string): string => {
-    const suggestions: { [key: string]: string } = {
-      tomato: 'After tomatoes, plant legumes like beans or peas to restore nitrogen in the soil.',
-      potato: 'Avoid planting tomatoes or eggplants next, as they are in the same family and can share diseases. Consider leafy greens.',
-      wheat: 'Planting a legume crop like chickpeas or lentils after wheat can help fix nitrogen.',
-      cotton: 'Rotate with a non-host crop for pests like sorghum or corn to break the pest cycle.',
-      default: 'Consider planting a cover crop like clover to improve soil health for the next season.',
-    };
-    return suggestions[crop.toLowerCase()] || suggestions.default;
+  const getAISuggestion = async (crop: string, size: number, location: string): Promise<string> => {
+    try {
+      const { getFarmingSuggestion } = await import('../services/aiService');
+      const season = new Date().getMonth() >= 3 && new Date().getMonth() <= 9 ? 'Kharif' : 'Rabi';
+      const suggestion = await getFarmingSuggestion(crop, season, location || 'India');
+      return suggestion;
+    } catch (error) {
+      console.error('AI Suggestion Error:', error);
+      // Fallback to static suggestions
+      const suggestions: { [key: string]: string } = {
+        tomato: 'After tomatoes, plant legumes like beans or peas to restore nitrogen in the soil.',
+        potato: 'Avoid planting tomatoes or eggplants next, as they are in the same family and can share diseases. Consider leafy greens.',
+        wheat: 'Planting a legume crop like chickpeas or lentils after wheat can help fix nitrogen.',
+        cotton: 'Rotate with a non-host crop for pests like sorghum or corn to break the pest cycle.',
+        default: 'Consider planting a cover crop like clover to improve soil health for the next season.',
+      };
+      return suggestions[crop.toLowerCase()] || suggestions.default;
+    }
   };
+
 
   const getReminderSuggestions = (crop: string): Partial<Reminder>[] => {
     const suggestions: { [key: string]: Partial<Reminder>[] } = {
@@ -171,17 +181,17 @@ const FarmTrackingPage: React.FC<FarmTrackingPageProps> = ({ currentUser }) => {
     };
     return colors[crop.toLowerCase()] || colors.default;
   };
-  
+
   const getDeviceIcon = (type: Device['type']) => {
     switch (type) {
-        case 'Sprinkler':
-            return <Droplets className="w-8 h-8 text-blue-500" />;
-        case 'Sensor':
-            return <Cpu className="w-8 h-8 text-purple-500" />;
-        case 'Pump':
-            return <Power className="w-8 h-8 text-yellow-500" />;
-        default:
-            return <Cpu className="w-8 h-8 text-gray-500" />;
+      case 'Sprinkler':
+        return <Droplets className="w-8 h-8 text-blue-500" />;
+      case 'Sensor':
+        return <Cpu className="w-8 h-8 text-purple-500" />;
+      case 'Pump':
+        return <Power className="w-8 h-8 text-yellow-500" />;
+      default:
+        return <Cpu className="w-8 h-8 text-gray-500" />;
     }
   };
 
@@ -210,7 +220,11 @@ const FarmTrackingPage: React.FC<FarmTrackingPageProps> = ({ currentUser }) => {
       return;
     }
 
-    const suggestion = getAISuggestion(currentPlot.crop);
+    const suggestion = await getAISuggestion(
+      currentPlot.crop,
+      currentPlot.size,
+      currentUser?.location || 'India'
+    );
     const color = getPlotColor(currentPlot.crop);
 
     let newPlot: Plot;
@@ -244,6 +258,7 @@ const FarmTrackingPage: React.FC<FarmTrackingPageProps> = ({ currentUser }) => {
       alert('Failed to save plot.');
     }
   };
+
 
   const handleDeletePlot = async (id: number) => {
     if (!window.confirm('Are you sure you want to delete this plot?')) return;
@@ -289,49 +304,49 @@ const FarmTrackingPage: React.FC<FarmTrackingPageProps> = ({ currentUser }) => {
     setCurrentDevice(device ? { ...device } : { name: '', type: 'Sprinkler', status: 'off' });
     setIsDeviceModalOpen(true);
   };
-  
+
   const handleCloseDeviceModal = () => {
     setIsDeviceModalOpen(false);
     setCurrentDevice(null);
   };
-  
+
   const handleSaveDevice = async () => {
     if (!currentUser?.uid) {
-        alert('You must be logged in to save a device.');
-        return;
+      alert('You must be logged in to save a device.');
+      return;
     }
 
     if (!currentDevice || !currentDevice.name || !currentDevice.type) {
-        alert('Please fill all device fields.');
-        return;
+      alert('Please fill all device fields.');
+      return;
     }
-  
+
     const newDevice: Omit<Device, 'plotId'> & { plotId?: number } = {
-        id: currentDevice.id || uuidv4(),
-        name: currentDevice.name,
-        type: currentDevice.type || 'Other',
-        status: currentDevice.status || 'off',
+      id: currentDevice.id || uuidv4(),
+      name: currentDevice.name,
+      type: currentDevice.type || 'Other',
+      status: currentDevice.status || 'off',
     };
-  
+
     if (currentDevice.plotId) {
-        newDevice.plotId = currentDevice.plotId;
+      newDevice.plotId = currentDevice.plotId;
     }
-  
+
     try {
-        // Corrected collection path
-        const deviceRef = doc(db, 'users', currentUser.uid, 'devices', newDevice.id);
-        await setDoc(deviceRef, newDevice, { merge: true });
-  
-        setDevices(prev => {
-            const updatedDevice = { ...newDevice, id: newDevice.id } as Device;
-            const exists = prev.find(d => d.id === updatedDevice.id);
-            return exists ? prev.map(d => (d.id === updatedDevice.id ? updatedDevice : d)) : [...prev, updatedDevice];
-        });
-  
-        handleCloseDeviceModal();
+      // Corrected collection path
+      const deviceRef = doc(db, 'users', currentUser.uid, 'devices', newDevice.id);
+      await setDoc(deviceRef, newDevice, { merge: true });
+
+      setDevices(prev => {
+        const updatedDevice = { ...newDevice, id: newDevice.id } as Device;
+        const exists = prev.find(d => d.id === updatedDevice.id);
+        return exists ? prev.map(d => (d.id === updatedDevice.id ? updatedDevice : d)) : [...prev, updatedDevice];
+      });
+
+      handleCloseDeviceModal();
     } catch (err: any) {
-        console.error("Firestore save error:", err); 
-        alert(`Failed to save device. Error: ${err.message}`);
+      console.error("Firestore save error:", err);
+      alert(`Failed to save device. Error: ${err.message}`);
     }
   };
 
@@ -339,26 +354,26 @@ const FarmTrackingPage: React.FC<FarmTrackingPageProps> = ({ currentUser }) => {
     if (!window.confirm('Are you sure you want to delete this device?')) return;
 
     try {
-        // Corrected collection path
-        await deleteDoc(doc(db, 'users', currentUser.uid, 'devices', id));
-        setDevices(prev => prev.filter(d => d.id !== id));
+      // Corrected collection path
+      await deleteDoc(doc(db, 'users', currentUser.uid, 'devices', id));
+      setDevices(prev => prev.filter(d => d.id !== id));
     } catch (err) {
-        console.error(err);
-        alert('Failed to delete device.');
+      console.error(err);
+      alert('Failed to delete device.');
     }
   };
-  
+
   const handleToggleDeviceStatus = async (device: Device) => {
     const newStatus = device.status === 'on' ? 'off' : 'on';
     // Corrected collection path
     const deviceRef = doc(db, 'users', currentUser.uid, 'devices', device.id);
-    
+
     try {
-        await updateDoc(deviceRef, { status: newStatus });
-        setDevices(prev => prev.map(d => d.id === device.id ? { ...d, status: newStatus } : d));
+      await updateDoc(deviceRef, { status: newStatus });
+      setDevices(prev => prev.map(d => d.id === device.id ? { ...d, status: newStatus } : d));
     } catch (err) {
-        console.error("Failed to toggle device status:", err);
-        alert("Failed to update device status.");
+      console.error("Failed to toggle device status:", err);
+      alert("Failed to update device status.");
     }
   };
 
@@ -614,70 +629,70 @@ const FarmTrackingPage: React.FC<FarmTrackingPageProps> = ({ currentUser }) => {
           )}
         </div>
       </div>
-      
+
       {/* Device Management Section */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-              <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-3 mb-4 md:mb-0">
-                  <Cpu className="w-7 h-7 text-blue-600" />
-                  Device Management
-              </h2>
-              <button
-                  onClick={() => handleOpenDeviceModal()}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
-              >
-                  <Plus className="w-5 h-5" />
-                  Add New Device
-              </button>
-          </div>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-3 mb-4 md:mb-0">
+            <Cpu className="w-7 h-7 text-blue-600" />
+            Device Management
+          </h2>
+          <button
+            onClick={() => handleOpenDeviceModal()}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+          >
+            <Plus className="w-5 h-5" />
+            Add New Device
+          </button>
+        </div>
 
-          {devices.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {devices.map(device => (
-                      <div key={device.id} className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border dark:border-gray-700 shadow-sm flex flex-col justify-between">
-                          <div>
-                            <div className="flex justify-between items-start mb-3">
-                                {getDeviceIcon(device.type)}
-                                <div className="flex items-center gap-2">
-                                    <button onClick={() => handleOpenDeviceModal(device)} className="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/50"><Edit className="w-4 h-4" /></button>
-                                    <button onClick={() => handleDeleteDevice(device.id)} className="text-red-600 hover:text-red-800 p-1 rounded-full hover:bg-red-100 dark:hover:bg-red-900/50"><Trash2 className="w-4 h-4" /></button>
-                                </div>
-                            </div>
-                            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">{device.name}</h3>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">Type: {device.type}</p>
-                            {device.plotId && plots.find(p => p.id === device.plotId) && (
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                  📍 Linked to: <span className="font-semibold">{plots.find(p => p.id === device.plotId)?.name}</span>
-                                </p>
-                            )}
-                          </div>
-                          
-                          <div className="mt-4">
-                            <button
-                                onClick={() => handleToggleDeviceStatus(device)}
-                                className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold transition-colors text-white ${device.status === 'on' ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-500 hover:bg-gray-600'}`}
-                            >
-                                <Power className="w-5 h-5" />
-                                <span>Turn {device.status === 'on' ? 'Off' : 'On'}</span>
-                            </button>
-                          </div>
-                      </div>
-                  ))}
-              </div>
-          ) : (
-              <div className="text-center py-16 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl">
-                  <Cpu className="w-12 h-12 text-gray-300 dark:text-gray-500 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-200">No devices found</h3>
-                  <p className="text-gray-500 dark:text-gray-400 mb-4">Add your first smart device to control it from here.</p>
+        {devices.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {devices.map(device => (
+              <div key={device.id} className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border dark:border-gray-700 shadow-sm flex flex-col justify-between">
+                <div>
+                  <div className="flex justify-between items-start mb-3">
+                    {getDeviceIcon(device.type)}
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => handleOpenDeviceModal(device)} className="text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/50"><Edit className="w-4 h-4" /></button>
+                      <button onClick={() => handleDeleteDevice(device.id)} className="text-red-600 hover:text-red-800 p-1 rounded-full hover:bg-red-100 dark:hover:bg-red-900/50"><Trash2 className="w-4 h-4" /></button>
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">{device.name}</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Type: {device.type}</p>
+                  {device.plotId && plots.find(p => p.id === device.plotId) && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      📍 Linked to: <span className="font-semibold">{plots.find(p => p.id === device.plotId)?.name}</span>
+                    </p>
+                  )}
+                </div>
+
+                <div className="mt-4">
                   <button
-                      onClick={() => handleOpenDeviceModal()}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                    onClick={() => handleToggleDeviceStatus(device)}
+                    className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold transition-colors text-white ${device.status === 'on' ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-500 hover:bg-gray-600'}`}
                   >
-                      <Plus className="w-5 h-5" />
-                      Add New Device
+                    <Power className="w-5 h-5" />
+                    <span>Turn {device.status === 'on' ? 'Off' : 'On'}</span>
                   </button>
+                </div>
               </div>
-          )}
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-16 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl">
+            <Cpu className="w-12 h-12 text-gray-300 dark:text-gray-500 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-200">No devices found</h3>
+            <p className="text-gray-500 dark:text-gray-400 mb-4">Add your first smart device to control it from here.</p>
+            <button
+              onClick={() => handleOpenDeviceModal()}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+            >
+              <Plus className="w-5 h-5" />
+              Add New Device
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Add/Edit Device Modal */}

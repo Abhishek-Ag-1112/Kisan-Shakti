@@ -1,8 +1,8 @@
 // src/pages/LandingPage.tsx
 
 import React from 'react';
-import { Link } from 'react-router-dom'; // Import Link
-import { Sprout, Cloud, TrendingUp, Shield, Gift, Beaker, ShoppingBag, ArrowRight, Star } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Cloud, TrendingUp, Shield, Gift, Beaker, ShoppingBag, ArrowRight, Check } from 'lucide-react';
 import ThemeSwitcher from '../components/ThemeSwitcher';
 
 interface LandingPageProps {
@@ -11,36 +11,32 @@ interface LandingPageProps {
 
 const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
   const features = [
-    { icon: Cloud, title: 'Weather Forecast', description: 'Accurate weather predictions for better crop planning.' },
-    { icon: TrendingUp, title: 'MSP Updates', description: 'Stay updated with government minimum support prices.' },
-    { icon: Shield, title: 'Crop Insurance', description: 'Protect your crops with comprehensive insurance options.' },
-    { icon: Gift, title: 'Government Schemes', description: 'Access PM-Kisan, Soil Health Cards, and more.' },
-    { icon: Beaker, title: 'Soil Analysis', description: 'Get personalized fertilizer recommendations from reports.' },
-    { icon: ShoppingBag, title: 'Marketplace', description: 'Buy quality seeds, fertilizers, and equipment.' }
-  ];
-
-  const testimonials = [
-    { name: 'Ramesh Patel', location: 'Gujarat', text: 'Kisan Shakti helped me increase my crop yield by 30% with their accurate weather planning. A game-changer!', rating: 5 },
-    { name: 'Sunita Devi', location: 'Punjab', text: 'The soil analysis feature is incredible. It saved me a lot on unnecessary fertilizers this season.', rating: 5 },
-    { name: 'Krishnan Reddy', location: 'Andhra Pradesh', text: 'Easy access to government schemes helped me get my PM-Kisan benefits quickly and without any hassle.', rating: 5 }
+    { icon: Cloud, title: 'Weather Forecast', description: 'Real-time weather updates for better planning' },
+    { icon: TrendingUp, title: 'Market Prices', description: 'Latest MSP rates and market trends' },
+    { icon: Shield, title: 'Crop Insurance', description: 'Protect your crops easily' },
+    { icon: Gift, title: 'Govt. Schemes', description: 'Access PM-Kisan and more' },
+    { icon: Beaker, title: 'Soil Analysis', description: 'Get fertilizer recommendations' },
+    { icon: ShoppingBag, title: 'Marketplace', description: 'Buy seeds and equipment' }
   ];
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <header className="sticky top-0 z-50 bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="Kisan Shakti Logo" className="w-10 h-10" />
-            <span className="font-bold text-xl text-gray-800 dark:text-gray-100">किsan Shakti</span>
+            <div className="w-10 h-10 bg-green-600 rounded-xl flex items-center justify-center">
+              <img src="/logo.png" alt="Logo" className="w-6 h-6" />
+            </div>
+            <span className="font-bold text-xl text-gray-900 dark:text-gray-100">किsan Shakti</span>
           </div>
+
           <div className="flex items-center gap-4">
-             <Link to="/blog" className="text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition-colors">Blog</Link> {/* Add blog link */}
+            <Link to="/blog" className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400">
+              Blog
+            </Link>
             <ThemeSwitcher />
-            <button
-              onClick={onGetStarted}
-              className="bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 transition-colors font-semibold shadow-sm hover:shadow-md"
-            >
+            <button onClick={onGetStarted} className="btn-primary">
               Get Started
             </button>
           </div>
@@ -49,79 +45,85 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
       <main>
         {/* Hero Section */}
-        <section className="relative bg-gradient-to-br from-lime-50 via-gray-50 to-emerald-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
-          <div className="max-w-7xl mx-auto px-6 py-24 md:py-32 text-center">
-            <h1 className="text-5xl md:text-7xl font-bold mb-6 text-gray-800 dark:text-gray-100">
-              Smarter Farming, Brighter Future
-            </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-300 mb-10 max-w-3xl mx-auto">
-              One platform for weather, MSP rates, crop insurance, government schemes, soil analysis, and marketplace access.
-            </p>
-            <button
-              onClick={onGetStarted}
-              className="bg-green-600 text-white px-8 py-4 rounded-xl hover:bg-green-700 transition-all font-bold text-lg flex items-center justify-center gap-2 mx-auto shadow-lg hover:shadow-xl transform hover:-translate-y-1 duration-300"
-            >
-              Start Farming Smarter <ArrowRight className="w-5 h-5" />
-            </button>
-          </div>
-        </section>
-
-        {/* Features Section */}
-        <section className="bg-white dark:bg-gray-800/50 py-24">
+        <section className="py-20 md:py-32">
           <div className="max-w-7xl mx-auto px-6">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold mb-4 text-gray-800 dark:text-gray-100">Everything a Modern Farmer Needs</h2>
-              <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">Our tools provide you with the data and insights to maximize your farm's potential and profitability.</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-              {features.map((feature) => {
-                const Icon = feature.icon;
-                return (
-                  <div key={feature.title} className="text-center p-8 bg-gray-50 dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
-                    <div className="w-16 h-16 bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mb-5 mx-auto">
-                      <Icon className="w-8 h-8" />
-                    </div>
-                    <h3 className="text-xl font-semibold mb-3 text-gray-800 dark:text-gray-200">{feature.title}</h3>
-                    <p className="text-gray-600 dark:text-gray-400 leading-relaxed">{feature.description}</p>
-                  </div>
-                );
-              })}
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-sm font-medium mb-6">
+                  <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                  Trusted by 50,000+ Farmers
+                </div>
+                <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-gray-100 mb-6 leading-tight">
+                  Smarter Farming Starts Here
+                </h1>
+                <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
+                  All-in-one platform for weather, prices, insurance, schemes, and marketplace.
+                </p>
+                <button onClick={onGetStarted} className="btn-primary text-lg px-8 py-4">
+                  Start Free <ArrowRight className="w-5 h-5 ml-2 inline" />
+                </button>
+              </div>
+
+              <div className="relative">
+                <div className="card p-8">
+                  <img
+                    src="/images/hero.png"
+                    alt="Farmer using app"
+                    className="w-full rounded-xl"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Testimonials */}
-        <section className="py-24 bg-gray-50 dark:bg-gray-900">
-          <div className="max-w-5xl mx-auto px-6">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold mb-4 text-gray-800 dark:text-gray-100">Trusted by Farmers Across India</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {testimonials.map((t) => (
-                <div key={t.name} className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg border border-gray-100 dark:border-gray-700 text-center">
-                  <div className="flex items-center justify-center gap-1 mb-5">
-                    {[...Array(t.rating)].map((_, i) => <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />)}
-                  </div>
-                  <p className="text-gray-700 dark:text-gray-300 mb-6 italic">"{t.text}"</p>
-                  <div>
-                    <div className="font-semibold text-gray-800 dark:text-gray-200">{t.name}</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">{t.location}</div>
-                  </div>
+        {/* Stats */}
+        <section className="py-12 border-y border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+              {[
+                { value: '50K+', label: 'Farmers' },
+                { value: '18+', label: 'States' },
+                { value: '45+', label: 'Crops' },
+                { value: '100+', label: 'Schemes' }
+              ].map((stat) => (
+                <div key={stat.label}>
+                  <div className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1">{stat.value}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">{stat.label}</div>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="bg-green-600">
-          <div className="max-w-4xl mx-auto px-6 py-20 text-center">
-            <h2 className="text-4xl font-bold text-white mb-4">Ready to Transform Your Farming?</h2>
-            <p className="text-xl text-green-100 mb-8">Join thousands of farmers using Kisan Shakti to increase profits and reduce risks.</p>
-            <button
-              onClick={onGetStarted}
-              className="bg-white text-green-600 px-8 py-4 rounded-xl hover:bg-gray-100 transition-colors font-bold text-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 duration-300"
-            >
+        {/* Features */}
+        <section className="py-20">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="text-center mb-12">
+              <h2 className="section-title">Everything You Need</h2>
+              <p className="section-subtitle">Simple tools for modern farming</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {features.map((feature, i) => (
+                <div key={i} onClick={onGetStarted} className="card-interactive p-6">
+                  <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-xl flex items-center justify-center mb-4">
+                    <feature.icon className="w-6 h-6" />
+                  </div>
+                  <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 mb-2">{feature.title}</h3>
+                  <p className="text-gray-600 dark:text-gray-400">{feature.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* CTA */}
+        <section className="py-20 bg-green-600">
+          <div className="max-w-4xl mx-auto px-6 text-center text-white">
+            <h2 className="text-4xl font-bold mb-4">Ready to Transform Your Farm?</h2>
+            <p className="text-xl text-green-100 mb-8">Join thousands of farmers already using Kisan Shakti</p>
+            <button onClick={onGetStarted} className="bg-white text-green-600 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-colors">
               Get Started For Free
             </button>
           </div>
@@ -129,9 +131,38 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-800 text-white">
-        <div className="max-w-7xl mx-auto px-6 py-8 text-center text-gray-400">
-          <p>&copy; {new Date().getFullYear()} Kisan Shakti. Made with ❤️ for Indian farmers.</p>
+      <footer className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-12">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
+            <div className="md:col-span-2">
+              <div className="flex items-center gap-3 mb-4">
+                <img src="/logo.png" alt="Logo" className="w-8 h-8" />
+                <span className="font-bold text-xl">किsan Shakti</span>
+              </div>
+              <p className="text-gray-600 dark:text-gray-400">
+                Empowering farmers with technology and data
+              </p>
+            </div>
+            <div>
+              <h4 className="font-bold text-sm uppercase tracking-wide mb-4">Product</h4>
+              <ul className="space-y-2 text-gray-600 dark:text-gray-400">
+                <li><a href="#" className="hover:text-green-600">Weather</a></li>
+                <li><a href="#" className="hover:text-green-600">Marketplace</a></li>
+                <li><a href="#" className="hover:text-green-600">Schemes</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-bold text-sm uppercase tracking-wide mb-4">Company</h4>
+              <ul className="space-y-2 text-gray-600 dark:text-gray-400">
+                <li><a href="#" className="hover:text-green-600">About</a></li>
+                <li><a href="#" className="hover:text-green-600">Privacy</a></li>
+                <li><a href="#" className="hover:text-green-600">Terms</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="text-center pt-8 border-t border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 text-sm">
+            © {new Date().getFullYear()} Kisan Shakti. Made with ❤️ for Indian farmers.
+          </div>
         </div>
       </footer>
     </div>

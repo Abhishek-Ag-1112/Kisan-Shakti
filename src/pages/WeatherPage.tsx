@@ -1,195 +1,233 @@
-// src/pages/WeatherPage.tsx (Theme-Aligned, Visually-Focused Redesign)
+// src/pages/WeatherPage.tsx
 
-import React, { useState, useEffect } from "react";
-import { Cloud, Droplets, Wind, AlertTriangle, Thermometer, Calendar, CloudRain } from "lucide-react";
-import {
-  ComposedChart,
-  Area,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from "recharts";
-import { useLanguage } from "../contexts/LanguageContext";
+import React, { useState, useEffect } from 'react';
+import { Cloud, Droplets, Wind, AlertTriangle, Thermometer, Sun, CloudRain, Lightbulb, Loader } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
+import { getWeatherBasedAdvice } from '../services/aiService';
 
-// --- DYNAMIC Historical Data Generation ---
-const generateHistoricalDaysData = () => {
-  const data = [];
-  const today = new Date();
-  for (let i = 0; i < 30; i++) {
-    const date = new Date(today);
-    date.setDate(today.getDate() - i);
-    const day = date.toLocaleDateString('en-GB', { day: '2-digit' });
-    const month = date.toLocaleDateString('en-GB', { month: 'short' });
-    data.push({
-      name: `${day} ${month}`,
-      avgTemp: parseFloat((35 + Math.sin(i / 3) * 4 - Math.random() * 3).toFixed(1)),
-      totalRainfall: parseFloat((Math.random() > 0.8 ? Math.random() * 15 : 0).toFixed(1)),
-    });
-  }
-  return data.reverse();
-};
+interface WeatherPageProps {
+    currentUser: any;
+}
 
-const historicalWeeksData = Array.from({ length: 12 }, (_, i) => ({ name: `Week ${i + 1}`, avgTemp: parseFloat((34 - i * 0.7 + Math.random() * 2).toFixed(1)), totalRainfall: parseFloat((Math.random() * (40 - i * 2.5)).toFixed(1)) }));
-const historicalMonthsData = [ { name: 'Apr', avgTemp: 38.6, totalRainfall: 5 }, { name: 'May', avgTemp: 40.3, totalRainfall: 10 }, { name: 'Jun', avgTemp: 35.1, totalRainfall: 120 }, { name: 'Jul', avgTemp: 28.8, totalRainfall: 300 }, { name: 'Aug', avgTemp: 29.5, totalRainfall: 250 }, { name: 'Sep', avgTemp: 30.2, totalRainfall: 150 } ];
-const historicalYearsData = [ { name: '2021', avgTemp: 31.0, totalRainfall: 850 }, { name: '2022', avgTemp: 32.5, totalRainfall: 780 }, { name: '2023', avgTemp: 32.1, totalRainfall: 920 }, { name: '2024', avgTemp: 33.0, totalRainfall: 750 }, { name: '2025', avgTemp: 31.5, totalRainfall: 880 } ];
-// --- End of Data Generation ---
+const WeatherPage: React.FC<WeatherPageProps> = ({ currentUser }) => {
+    const { translations, language } = useLanguage();
+    const T = translations.weatherPage || {};
 
-// Custom Tooltip for Graphs
-const CustomTooltip = ({ active, payload, label, translations, language }: any) => {
-    if (active && payload && payload.length) {
+    const [weatherData, setWeatherData] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [selectedCity] = useState<string>(currentUser?.location?.split(',')[0] || 'Ahmedabad');
+
+    const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY;
+
+    useEffect(() => {
+        const fetchWeather = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const response = await fetch(
+                    `https://api.openweathermap.org/data/2.5/weather?q=${selectedCity}&appid=${API_KEY}&units=metric`
+                );
+                if (!response.ok) {
+                    throw new Error('Failed to fetch weather data');
+                }
+                const data = await response.json();
+                setWeatherData(data);
+            } catch (err: any) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchWeather();
+    }, [selectedCity, API_KEY]);
+
+    if (loading) {
         return (
-            <div className="bg-white/70 backdrop-blur-lg p-3 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg">
-                <p className="font-bold text-gray-900 dark:text-gray-100">{label}</p>
-                <div className="mt-2 space-y-1 text-sm">
-                    <p className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center"><Thermometer size={14} className="mr-2"/>{translations.avgTemp?.[language] || 'Avg Temp'}: <span className="font-bold ml-1.5">{payload[1].value}°C</span></p>
-                    <p className="text-cyan-600 dark:text-cyan-400 font-semibold flex items-center"><CloudRain size={14} className="mr-2"/>{translations.totalRainfall?.[language] || 'Rainfall'}: <span className="font-bold ml-1.5">{payload[0].value} mm</span></p>
+            <div className="flex items-center justify-center h-64">
+                <div className="spinner w-12 h-12"></div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="alert-error">
+                <AlertTriangle className="w-5 h-5" />
+                <div>
+                    <p className="font-bold">Error loading weather</p>
+                    <p className="text-sm">{error}</p>
                 </div>
             </div>
         );
     }
-    return null;
-};
 
-interface WeatherPageProps {
-  currentUser: any;
-}
+    const temp = weatherData?.main?.temp || 0;
+    const feelsLike = weatherData?.main?.feels_like || 0;
+    const humidity = weatherData?.main?.humidity || 0;
+    const windSpeed = weatherData?.wind?.speed || 0;
+    const description = weatherData?.weather?.[0]?.description || 'Clear';
 
-const WeatherPage: React.FC<WeatherPageProps> = ({ currentUser }) => {
-  const { translations, language } = useLanguage();
-  const T = translations.weatherPage;
+    return (
+        <div className="space-y-6 pb-8">
+            {/* Header */}
+            <div className="card p-6">
+                <div className="flex items-center gap-3 mb-2">
+                    <Cloud className="w-8 h-8 text-blue-600" />
+                    <h1 className="section-title mb-0">{T.weatherCenter?.[language] || 'Weather'}</h1>
+                </div>
+                <p className="text-gray-600 dark:text-gray-400">{selectedCity}</p>
+            </div>
 
-  const [weatherData, setWeatherData] = useState<any>(null);
-  const [alerts, setAlerts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedCity] = useState<string>(currentUser?.location?.split(',')[0] || "Ahmedabad");
-  
-  const [historicalTimeframe, setHistoricalTimeframe] = useState<'days' | 'weeks' | 'months' | 'years'>('days');
-  const [historicalData, setHistoricalData] = useState<any[]>([]);
-  const [loadingHistorical, setLoadingHistorical] = useState(true);
+            {/* Current Weather */}
+            <div className="card p-8">
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <div className="text-6xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                            {Math.round(temp)}°C
+                        </div>
+                        <p className="text-xl text-gray-600 dark:text-gray-400 capitalize">
+                            {description}
+                        </p>
+                    </div>
+                    <Sun className="w-24 h-24 text-amber-500" />
+                </div>
 
-  const API_KEY = "6cda69c02716a49abcc0cc15bb1377b1";
+                <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                        <Thermometer className="w-6 h-6 text-orange-500 mx-auto mb-2" />
+                        <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                            {T.feelsLike?.[language] || 'Feels Like'}
+                        </div>
+                        <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                            {Math.round(feelsLike)}°C
+                        </div>
+                    </div>
 
-  useEffect(() => {
-    const fetchAllData = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${selectedCity}&appid=${API_KEY}&units=metric`);
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || "Failed to fetch data.");
-            }
-            const data = await response.json();
-            setWeatherData(data);
-        } catch (err: any) {
-            setError(err.message);
-            console.error("API Fetch Error:", err);
-        } finally {
-            setLoading(false);
-        }
+                    <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                        <Droplets className="w-6 h-6 text-blue-500 mx-auto mb-2" />
+                        <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                            {T.humidity?.[language] || 'Humidity'}
+                        </div>
+                        <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                            {humidity}%
+                        </div>
+                    </div>
 
-        const dummyAlerts = [{ severity: 'Red' }];
-        setAlerts(dummyAlerts || []);
-    };
-    fetchAllData();
-  }, [selectedCity]);
+                    <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                        <Wind className="w-6 h-6 text-cyan-500 mx-auto mb-2" />
+                        <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                            {T.windSpeed?.[language] || 'Wind'}
+                        </div>
+                        <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                            {Math.round(windSpeed)} km/h
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-  useEffect(() => {
-    setLoadingHistorical(true);
-    setTimeout(() => {
-      if (historicalTimeframe === 'days') setHistoricalData(generateHistoricalDaysData());
-      if (historicalTimeframe === 'weeks') setHistoricalData(historicalWeeksData);
-      if (historicalTimeframe === 'months') setHistoricalData(historicalMonthsData);
-      if (historicalTimeframe === 'years') setHistoricalData(historicalYearsData);
-      setLoadingHistorical(false);
-    }, 500);
-  }, [historicalTimeframe]);
-
-  const renderHistoricalChart = () => (
-    <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={historicalData} margin={{ top: 5, right: 20, left: -15, bottom: 5 }}>
-            <defs>
-                <linearGradient id="colorTemp" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10b981" stopOpacity={0.7}/><stop offset="95%" stopColor="#10b981" stopOpacity={0}/></linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(128, 128, 128, 0.2)" />
-            <XAxis dataKey="name" tick={{ fontSize: 12, fill: 'rgb(107 114 128)' }} stroke="rgb(156 163 175)" />
-            <YAxis yAxisId="left" stroke="#10b981" tick={{ fontSize: 12, fill: '#10b981' }} />
-            <YAxis yAxisId="right" orientation="right" stroke="#06b6d4" tick={{ fontSize: 12, fill: '#06b6d4' }} />
-            <Tooltip content={<CustomTooltip translations={T} language={language} />} cursor={{ stroke: '#10b981', strokeWidth: 1, strokeDasharray: '3 3' }} />
-            <Legend formatter={(value) => T[value.toLowerCase().replace(/ /g, '')]?.[language] || value} iconSize={12} wrapperStyle={{ paddingTop: '25px' }} />
-            <Bar yAxisId="right" dataKey="totalRainfall" name="Total Rainfall" fill="#06b6d4" radius={[4, 4, 0, 0]} />
-            <Area yAxisId="left" type="monotone" dataKey="avgTemp" name="Avg Temperature" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorTemp)" activeDot={{ r: 7 }} />
-        </ComposedChart>
-    </ResponsiveContainer>
-  );
-
-  return (
-    <div className="space-y-8 pb-10">
-        <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-            <h1 className="text-4xl font-extrabold text-gray-800 dark:text-gray-100 flex items-center gap-3 tracking-tight"><Cloud className="w-9 h-9 text-emerald-600" /> {T.weatherCenter?.[language] || 'Weather Center'}</h1>
-            <div className="font-semibold text-xl text-gray-500 dark:text-gray-400">{selectedCity}, India</div>
-        </div>
-        
-        {alerts.length > 0 && (
-            <div className="bg-amber-50 dark:bg-amber-900/50 border-l-4 border-amber-500 text-amber-800 dark:text-amber-200 p-4 rounded-r-lg flex items-start gap-4 shadow-sm">
-                <AlertTriangle className="w-6 h-6 flex-shrink-0 mt-0.5" />
+            {/* Weather Alert */}
+            <div className="alert-warning">
+                <AlertTriangle className="w-5 h-5" />
                 <div>
-                    <h3 className="font-bold">{T.alertTitle?.[language] || 'Extreme Heatwave Warning'}</h3>
-                    <p className="text-sm">{T.alertAdvice?.[language] || 'Apply light and frequent irrigation. Use shade nets.'}</p>
+                    <p className="font-bold">
+                        {T.alertTitle?.[language] || 'Weather Advisory'}
+                    </p>
+                    <p className="text-sm">
+                        {T.alertAdvice?.[language] || 'High temperature expected. Ensure adequate irrigation.'}
+                    </p>
                 </div>
             </div>
-        )}
-        
-        {loading && <div className="h-72 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-2xl"><p>{translations.common.loading?.[language] || 'Loading...'}</p></div>}
-        {error && <div className="h-72 flex items-center justify-center bg-rose-50 dark:bg-rose-900/50 text-rose-700 dark:text-rose-200 rounded-2xl p-4">{error}</div>}
 
-        {!loading && weatherData && (
-            <div className="relative bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 rounded-3xl shadow-2xl p-8 text-white overflow-hidden">
-                 <div className="absolute -top-10 -right-10 w-48 h-48 bg-white/20 rounded-full mix-blend-overlay"></div>
-                 <div className="absolute -bottom-16 -left-10 w-64 h-64 bg-white/20 rounded-full mix-blend-overlay"></div>
-                <div className="relative z-10">
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <p className="text-2xl font-light">{T.currentTemp?.[language] || 'Current Temperature'}</p>
-                            <p className="text-8xl font-bold tracking-tighter -ml-1">{Math.round(weatherData.main.temp)}°C</p>
+            {/* 5-Day Forecast */}
+            <div className="card p-6">
+                <h2 className="font-bold text-xl text-gray-900 dark:text-gray-100 mb-4">
+                    5-Day Forecast
+                </h2>
+                <div className="grid grid-cols-5 gap-3">
+                    {[1, 2, 3, 4, 5].map((day) => (
+                        <div key={day} className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                            <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                                Day {day}
+                            </div>
+                            <CloudRain className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                            <div className="font-bold text-gray-900 dark:text-gray-100">
+                                {Math.round(temp - day)}°C
+                            </div>
                         </div>
-                        <div className="text-right">
-                            <img src={`http://openweathermap.org/img/wn/${weatherData.weather[0].icon}@4x.png`} alt="weather" className="w-32 h-32 -mt-8 -mr-8 drop-shadow-lg"/>
-                            <p className="text-xl text-emerald-100 capitalize">{weatherData.weather[0].description}</p>
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-4 mt-8 pt-6 border-t border-white/20">
-                        <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl text-center"><p className="text-sm">{T.feelsLike?.[language] || 'Feels Like'}</p><p className="font-bold text-xl">{Math.round(weatherData.main.feels_like)}°C</p></div>
-                        <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl text-center"><p className="text-sm">{T.humidity?.[language] || 'Humidity'}</p><p className="font-bold text-xl">{weatherData.main.humidity}%</p></div>
-                        <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl text-center"><p className="text-sm">{T.windSpeed?.[language] || 'Wind Speed'}</p><p className="font-bold text-xl">{weatherData.wind.speed}m/s</p></div>
-                    </div>
-                </div>
-            </div>
-        )}
-
-        <div className="bg-white/60 dark:bg-gray-800/50 backdrop-blur-lg rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 p-8">
-            <div className="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-4">
-                <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-3"><Calendar className="w-8 h-8 text-emerald-600" />{T.historicalWeather?.[language] || 'Historical Analysis'}</h2>
-                <div className="flex items-center p-1.5 bg-gray-100 dark:bg-gray-900/50 rounded-full border dark:border-gray-700">
-                    {[{id: 'days'}, {id: 'weeks'}, {id: 'months'}, {id: 'years'}].map((tf) => (
-                        <button key={tf.id} onClick={() => setHistoricalTimeframe(tf.id as any)} 
-                                className={`px-5 py-2 text-sm font-semibold rounded-full transition-all duration-300 transform hover:scale-105 ${historicalTimeframe === tf.id ? 'bg-gradient-to-r from-emerald-500 to-teal-400 text-white shadow-md' : 'text-gray-500 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}`}>
-                            {T[tf.id]?.[language] || tf.id.charAt(0).toUpperCase() + tf.id.slice(1)}
-                        </button>
                     ))}
                 </div>
             </div>
-            <div className="h-96 w-full">
-              {loadingHistorical ? <div className="flex items-center justify-center h-full"><p>{translations.common.loading?.[language] || 'Loading...'}</p></div> : renderHistoricalChart()}
-            </div>
+
+            {/* AI Farming Advice */}
+            <AIFarmingAdvice weatherData={weatherData} currentUser={currentUser} />
         </div>
-    </div>
-  );
+    );
+};
+
+// AI Farming Advice Component
+const AIFarmingAdvice: React.FC<{ weatherData: any; currentUser: any }> = ({ weatherData, currentUser }) => {
+    const [aiAdvice, setAiAdvice] = useState<string[]>([]);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        const fetchAIAdvice = async () => {
+            if (!weatherData) return;
+
+            setLoading(true);
+            try {
+                const temp = weatherData.main.temp;
+                const humidity = weatherData.main.humidity;
+                const rainfall = weatherData.rain?.['1h'] || 0;
+                const cropType = currentUser?.farmerProfile?.primaryCrop || 'General';
+
+                const advice = await getWeatherBasedAdvice(temp, humidity, rainfall, cropType);
+                setAiAdvice(advice);
+            } catch (error) {
+                console.error('AI Advice Error:', error);
+                // Fallback to static advice
+                setAiAdvice([
+                    'Temperature is high. Water crops in early morning or evening.',
+                    'Low wind speed is ideal for pesticide application.',
+                    'Monitor crops for heat stress symptoms.'
+                ]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchAIAdvice();
+    }, [weatherData, currentUser]);
+
+    return (
+        <div className="card p-6">
+            <h2 className="font-bold text-xl text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                <Lightbulb className="w-6 h-6 text-amber-600" />
+                AI Farming Advice
+            </h2>
+            {loading ? (
+                <div className="flex items-center justify-center py-8">
+                    <Loader className="w-8 h-8 animate-spin text-green-600" />
+                </div>
+            ) : (
+                <div className="space-y-3">
+                    {aiAdvice.map((advice, i) => (
+                        <div
+                            key={i}
+                            className="flex items-start gap-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl"
+                        >
+                            <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">
+                                {i + 1}
+                            </div>
+                            <p className="text-gray-700 dark:text-gray-300 flex-1">
+                                {advice}
+                            </p>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
 };
 
 export default WeatherPage;
