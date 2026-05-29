@@ -1,13 +1,14 @@
 // src/pages/SoilReportPage.tsx - SIMPLIFIED VERSION
 
 import { useState } from 'react';
-import { Beaker, Loader, CheckCircle, AlertCircle, FileText } from 'lucide-react';
+import { Beaker, Loader, CheckCircle, AlertCircle, FileText, Upload } from 'lucide-react';
 import { db, auth } from '../services/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 import { analyzeSoilReport } from '../services/aiService';
 
 const SoilReportPage = () => {
   const [analyzing, setAnalyzing] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [soilData, setSoilData] = useState({
     nitrogen: '',
     phosphorus: '',
@@ -20,6 +21,77 @@ const SoilReportPage = () => {
     analysis: string;
     recommendations: string[];
   } | null>(null);
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('soilReport', file);
+
+    try {
+      const response = await fetch('http://localhost:5174/api/analyze-soil-report', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to analyze uploaded report');
+      }
+
+      const data = await response.json();
+      console.log('OCR Soil Report Data:', data);
+
+      // Auto-populate the form based on extracted data
+      const newSoilData = { ...soilData };
+      
+      if (Array.isArray(data.soilData)) {
+        data.soilData.forEach((item: any) => {
+          const name = item.nutrient.toLowerCase();
+          let status = item.status || 'Medium';
+          // Ensure standard capitalization
+          if (status.toLowerCase().startsWith('l')) status = 'Low';
+          else if (status.toLowerCase().startsWith('h')) status = 'High';
+          else status = 'Medium';
+          
+          if (name.includes('nitrogen') || name === 'n') {
+            newSoilData.nitrogen = status;
+          } else if (name.includes('phosphorus') || name === 'p') {
+            newSoilData.phosphorus = status;
+          } else if (name.includes('potassium') || name === 'k') {
+            newSoilData.potassium = status;
+          } else if (name.includes('ph')) {
+            newSoilData.pH = typeof item.value === 'number' ? item.value : parseFloat(item.value) || undefined;
+          } else if (name.includes('organic') || name.includes('matter')) {
+            newSoilData.organicMatter = typeof item.value === 'number' ? item.value : parseFloat(item.value) || undefined;
+          }
+        });
+      }
+
+      setSoilData(newSoilData);
+
+      // Populate recommendations immediately
+      if (Array.isArray(data.recommendations)) {
+        const mappedRecommendations = data.recommendations.map((rec: any) => 
+          typeof rec === 'string' ? rec : `${rec.title}: ${rec.description} (${rec.priority.toUpperCase()} priority)`
+        );
+
+        setCurrentAnalysis({
+          analysis: "Soil report successfully analyzed via AI OCR document scanning! Below are the parsed nutrient values and recommendations.",
+          recommendations: mappedRecommendations
+        });
+      }
+
+      alert('Soil report analyzed and populated successfully!');
+    } catch (error) {
+      console.error('OCR Upload error:', error);
+      alert('Failed to analyze uploaded file. Make sure the backend server (npm start) is running on port 5174.');
+    } finally {
+      setUploading(false);
+      event.target.value = '';
+    }
+  };
 
   const handleAnalyze = async () => {
     if (!soilData.nitrogen || !soilData.phosphorus || !soilData.potassium) {
@@ -78,9 +150,47 @@ const SoilReportPage = () => {
 
       {/* Input Section */}
       <div className="card p-6">
-        <h2 className="font-bold text-xl text-gray-900 dark:text-gray-100 mb-4">
-          Enter Soil Test Results
+        <h2 className="font-bold text-xl text-gray-900 dark:text-gray-100 mb-4 flex items-center justify-between">
+          <span>Soil Assessment & Analytics</span>
+          <span className="text-xs font-semibold px-2.5 py-1 bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400 rounded-full">AI OCR Enabled</span>
         </h2>
+
+        {/* OCR Upload Card */}
+        <div className="border-2 border-dashed border-indigo-200 dark:border-indigo-800 rounded-2xl p-6 mb-6 text-center bg-indigo-50/20 dark:bg-indigo-950/10 hover:border-indigo-400 dark:hover:border-indigo-600 transition-all duration-300">
+          <div className="mx-auto w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center mb-3">
+            <Upload className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+          </div>
+          <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-1">Scan Your Soil Report Document</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 max-w-md mx-auto">
+            Drop an image or PDF of your KVK lab report here. Our AI-driven OCR will scan and extract all NPK, pH, and organic nutrients instantly.
+          </p>
+          <label className={`btn-primary px-6 py-2.5 inline-flex items-center gap-2 cursor-pointer ${uploading ? 'opacity-70 pointer-events-none' : ''}`}>
+            {uploading ? (
+              <>
+                <Loader className="w-5 h-5 animate-spin" />
+                Scanning & Analyzing...
+              </>
+            ) : (
+              <>
+                <FileText className="w-5 h-5" />
+                Select Lab Report File
+              </>
+            )}
+            <input
+              type="file"
+              accept="image/*,application/pdf"
+              onChange={handleFileUpload}
+              className="hidden"
+              disabled={uploading}
+            />
+          </label>
+        </div>
+
+        <div className="flex items-center gap-4 my-6">
+          <div className="h-[1px] bg-gray-200 dark:bg-gray-700 flex-1"></div>
+          <span className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Or Fill In Nutrient Values Manually</span>
+          <div className="h-[1px] bg-gray-200 dark:bg-gray-700 flex-1"></div>
+        </div>
 
         <div className="grid md:grid-cols-2 gap-4 mb-4">
           <div>

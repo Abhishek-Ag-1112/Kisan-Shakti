@@ -16,7 +16,11 @@ const WeatherPage: React.FC<WeatherPageProps> = ({ currentUser }) => {
     const [weatherData, setWeatherData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [selectedCity] = useState<string>(currentUser?.location?.split(',')[0] || 'Ahmedabad');
+    const [selectedCity] = useState<string>(
+        currentUser?.location && currentUser.location !== 'Your Farm'
+            ? currentUser.location.split(',')[0].trim()
+            : 'Ahmedabad'
+    );
 
     const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY;
 

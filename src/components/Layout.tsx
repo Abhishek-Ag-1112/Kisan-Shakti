@@ -17,18 +17,21 @@ const Layout: React.FC<LayoutProps> = ({ onLogout, currentUser }) => {
 
   useEffect(() => {
     const fetchWeatherData = async () => {
-      if (currentUser?.location) {
-        try {
-          const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${currentUser.location}&appid=3d3e424754ce88340833ee1375819842&units=metric`);
-          if (!response.ok) {
-            throw new Error('Weather data not found');
-          }
-          const data = await response.json();
-          setWeatherData(data);
-        } catch (error) {
-          console.error("Failed to fetch weather data:", error);
-          setWeatherData(null);
+      const location = currentUser?.location && currentUser.location !== 'Your Farm' 
+        ? currentUser.location.split(',')[0].trim() 
+        : 'Ahmedabad';
+      const apiKey = import.meta.env.VITE_OPENWEATHER_API_KEY || '6cda69c02716a49abcc0cc15bb1377b1';
+      
+      try {
+        const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${location}&appid=${apiKey}&units=metric`);
+        if (!response.ok) {
+          throw new Error('Weather data not found');
         }
+        const data = await response.json();
+        setWeatherData(data);
+      } catch (error) {
+        console.error("Failed to fetch weather data:", error);
+        setWeatherData(null);
       }
     };
 

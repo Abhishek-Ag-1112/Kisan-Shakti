@@ -31,7 +31,7 @@ app.use(express.json());
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
-const getOpenRouterResponse = async (prompt, model = 'mistralai/mistral-7b-instruct:free') => {
+const getOpenRouterResponse = async (prompt, model = 'meta-llama/llama-3-8b-instruct:free') => {
     const response = await fetch(OPENROUTER_API_URL, {
         method: 'POST',
         headers: {
