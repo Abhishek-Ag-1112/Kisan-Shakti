@@ -29,13 +29,12 @@ const SoilReportPage = () => {
     setUploading(true);
     const formData = new FormData();
     formData.append('soilReport', file);
-
     try {
-      const response = await fetch('http://localhost:5174/api/analyze-soil-report', {
+      const backendUrl = import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:5174';
+      const response = await fetch(`${backendUrl}/api/analyze-soil-report`, {
         method: 'POST',
         body: formData,
       });
-
       if (!response.ok) {
         throw new Error('Failed to analyze uploaded report');
       }

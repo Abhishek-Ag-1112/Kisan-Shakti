@@ -1,0 +1,14 @@
+# netlify.toml - Netlify Configuration for Vite React SPA
+
+[build]
+  # Build command to generate the production bundle
+  command = "npm run build"
+  
+  # Directory where the compiled static files are generated
+  publish = "dist"
+
+# Redirects rule to ensure single-page application routing (react-router-dom) deep links work on reload
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
