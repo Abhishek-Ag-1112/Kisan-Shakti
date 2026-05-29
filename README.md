@@ -2,7 +2,7 @@
 
 A state-of-the-art, dual-role AI ecosystem engineered for the **Smart India Hackathon (SIH)**. Kisan Shakti empowers Indian farmers with real-time, context-aware AI advisory services, automated soil report OCR scanning, and simulated LoRaWAN IoT telemetry, while offering direct e-commerce channels linking agricultural producers to retail consumers.
 
-🌐 **Live Link**: [https://kisanshakti.com](https://kisanshakti.com) (Simulated Production Host)  
+🌐 **Live Link**: [https://kisanshakti.com](https://kisanshakti.netlify.app/) (Simulated Production Host)  
 🚀 **SIH Project Portal**: Kisan Shakti Hackathon Repository
 
 ---
